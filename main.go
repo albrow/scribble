@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"gopkg.in/alecthomas/kingpin.v1"
 	"os"
 )
@@ -35,15 +34,10 @@ func main() {
 	case compileCmd.FullCommand():
 		compile(*compileWatch)
 	case serveCmd.FullCommand():
+		compile(true)
 		serve(*servePort)
 	default:
 		app.Usage(os.Stdout)
 		os.Exit(0)
 	}
-}
-
-func serve(port int) {
-	compile(true)
-	fmt.Println("--> serving")
-	fmt.Printf("    port: %v\n", port)
 }
