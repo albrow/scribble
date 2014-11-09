@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/wsxiaoys/terminal/color"
+	"fmt"
 	"gopkg.in/alecthomas/kingpin.v1"
 	"os"
 )
@@ -19,6 +19,10 @@ var (
 const (
 	version = "0.0.1"
 )
+
+type Context map[string]interface{}
+
+var context = Context{}
 
 func main() {
 	kingpin.Version(version)
@@ -38,13 +42,8 @@ func main() {
 	}
 }
 
-func compile(watch bool) {
-	color.Println("--> compiling")
-	color.Printf("    watch: %v\n", watch)
-}
-
 func serve(port int) {
 	compile(true)
-	color.Println("--> serving")
-	color.Printf("    port: %v\n", port)
+	fmt.Println("--> serving")
+	fmt.Printf("    port: %v\n", port)
 }
