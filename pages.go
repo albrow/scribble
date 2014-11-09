@@ -85,7 +85,9 @@ func compilePageFromPath(path string) {
 		},
 	})
 	if err != nil {
-		panic(err)
+		fmt.Print("\a")
+		color.Printf("@r%s\n", err)
+		return
 	}
 	destPath := strings.Replace(path, sourceDir, destDir, 1)
 	destPath = strings.Replace(destPath, ".ace", ".html", 1)

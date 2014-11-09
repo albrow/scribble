@@ -95,7 +95,9 @@ func compilePosts() {
 		BaseDir:       sourceDir,
 	})
 	if err != nil {
-		panic(err)
+		fmt.Print("\a")
+		color.Printf("@r%s\n", err)
+		return
 	}
 	for _, p := range posts {
 		p.compile(tpl)
