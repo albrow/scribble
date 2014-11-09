@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/BurntSushi/toml"
 	"github.com/albrow/ace"
+	"github.com/wsxiaoys/terminal/color"
 	"io"
 	"os"
 	"path/filepath"
@@ -77,7 +78,8 @@ func compilePageFromPath(path string) {
 		layout = otherLayout.(string)
 	}
 	tpl, err := ace.Load("_layouts/"+layout, filepath.Base(path), &ace.Options{
-		BaseDir: sourceDir,
+		DynamicReload: true,
+		BaseDir:       sourceDir,
 		Asset: func(name string) ([]byte, error) {
 			return []byte(content), nil
 		},
@@ -90,6 +92,7 @@ func compilePageFromPath(path string) {
 	if err := os.MkdirAll(filepath.Dir(destPath), os.ModePerm); err != nil {
 		panic(err)
 	}
+	color.Printf("@g    CREATE: %s -> %s\n", path, destPath)
 	destFile, err := os.Create(destPath)
 	if err != nil {
 		// if the file already exists, that's fine

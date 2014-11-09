@@ -6,6 +6,7 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/albrow/ace"
 	"github.com/russross/blackfriday"
+	"github.com/wsxiaoys/terminal/color"
 	"html/template"
 	"os"
 	"path/filepath"
@@ -112,7 +113,9 @@ func (p Post) compile(tpl *template.Template) {
 	}
 
 	// make an index.html file inside that directory
-	file, err := os.Create(dirName + "/index.html")
+	destPath := dirName + "/index.html"
+	color.Printf("@g    CREATE: %s\n", destPath)
+	file, err := os.Create(destPath)
 	if err != nil {
 		// if the file already exists, that's fine
 		// if there was some other error, panic

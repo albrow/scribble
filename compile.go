@@ -15,6 +15,7 @@ func compile(watch bool) {
 	compileSass(watch)
 	compilePages()
 	compilePosts()
+	watchAll()
 }
 
 func removeOld() {
@@ -28,13 +29,13 @@ func removeOld() {
 			// ignore the destDir itself
 			return nil
 		} else if info.IsDir() {
-			if path == sassDestDir {
-				// let sass handle this one
-				return filepath.SkipDir
-			}
 			// remove the dir and everything in it
 			if err := os.RemoveAll(path); err != nil {
-				panic(err)
+				if !os.IsNotExist(err) {
+					// if the dir was already removed, that's fine
+					// if there was some other error, panic
+					panic(err)
+				}
 			}
 			return filepath.SkipDir
 		} else {

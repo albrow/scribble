@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/wsxiaoys/terminal/color"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -9,7 +10,6 @@ import (
 )
 
 func compileSass(watch bool) {
-	// TODO: implement watch
 	fmt.Println("    compiling sass")
 
 	// walk through the sass source dir
@@ -45,7 +45,7 @@ func compileSassFromPath(path string) {
 	srcFile := filepath.Base(path)
 	destFile := strings.Replace(srcFile, ".scss", ".css", 1)
 	destPath := fmt.Sprintf("%s/%s", destDir, destFile)
-	fmt.Printf("    %s -> %s\n", path, destPath)
+	color.Printf("@g    CREATE: %s -> %s\n", path, destPath)
 
 	// create the destDir if needed
 	if err := os.MkdirAll(destDir, os.ModePerm); err != nil {
