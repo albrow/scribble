@@ -90,7 +90,10 @@ func compilePosts() {
 	fmt.Println("    compiling posts")
 	// TODO: detect layout from frontmatter
 	// load the template
-	tpl, err := ace.Load("_layouts/base", "_views/post", &ace.Options{BaseDir: sourceDir})
+	tpl, err := ace.Load("_layouts/base", "_views/post", &ace.Options{
+		DynamicReload: true,
+		BaseDir:       sourceDir,
+	})
 	if err != nil {
 		panic(err)
 	}
