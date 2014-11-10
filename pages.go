@@ -105,6 +105,8 @@ func compilePageFromPath(path string) {
 		}
 	}
 	if err := tpl.Execute(destFile, pageContext); err != nil {
-		panic(err)
+		fmt.Print("\a")
+		color.Printf("@r%s\n", err)
+		return
 	}
 }

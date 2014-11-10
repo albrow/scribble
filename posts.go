@@ -131,7 +131,9 @@ func (p Post) compile(tpl *template.Template) {
 	}
 	context["Post"] = p
 	if err := tpl.Execute(file, context); err != nil {
-		panic(err)
+		fmt.Print("\a")
+		color.Printf("@r%s\n", err)
+		return
 	}
 	delete(context, "Post")
 }
