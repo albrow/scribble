@@ -93,6 +93,7 @@ func compilePosts() {
 	tpl, err := ace.Load("_layouts/base", "_views/post", &ace.Options{
 		DynamicReload: true,
 		BaseDir:       sourceDir,
+		FuncMap:       funcMap,
 	})
 	if err != nil {
 		fmt.Print("\a")

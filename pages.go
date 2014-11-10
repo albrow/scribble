@@ -80,6 +80,7 @@ func compilePageFromPath(path string) {
 	tpl, err := ace.Load("_layouts/"+layout, filepath.Base(path), &ace.Options{
 		DynamicReload: true,
 		BaseDir:       sourceDir,
+		FuncMap:       funcMap,
 		Asset: func(name string) ([]byte, error) {
 			return []byte(content), nil
 		},
