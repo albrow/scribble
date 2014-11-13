@@ -13,7 +13,7 @@ import (
 )
 
 func compilePages() {
-	fmt.Println("    compiling pages")
+	fmt.Println("--> compiling pages")
 	// walk through the source dir
 	if err := filepath.Walk(sourceDir, func(innerPath string, info os.FileInfo, err error) error {
 		if err != nil {

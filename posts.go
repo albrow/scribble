@@ -121,7 +121,7 @@ func getPostTemplate() *template.Template {
 
 // compilePosts compiles all posts in posts
 func compilePosts() {
-	fmt.Println("    compiling posts")
+	fmt.Println("--> compiling posts")
 	tpl := getPostTemplate()
 	for _, p := range posts {
 		p.compileWithTemplate(tpl)

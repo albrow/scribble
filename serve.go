@@ -7,9 +7,7 @@ import (
 )
 
 func serve(port int) {
-	fmt.Println("--> serving")
-	fmt.Printf("    port: %v\n", port)
-
+	fmt.Printf("--> serving on port %d\n", port)
 	// use negroni to serve destDir on port
 	destFileSystem := http.Dir(destDir)
 	n := negroni.New(negroni.NewStatic(destFileSystem), negroni.NewRecovery())

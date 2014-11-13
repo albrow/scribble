@@ -9,7 +9,6 @@ import (
 func compile(watch bool) {
 	parseConfig()
 	fmt.Println("--> compiling")
-	fmt.Printf("    watch: %v\n", watch)
 	removeAllOld()
 	parsePosts()
 	compileSass()

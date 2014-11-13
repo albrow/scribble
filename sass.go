@@ -10,7 +10,7 @@ import (
 )
 
 func compileSass() {
-	fmt.Println("    compiling sass")
+	fmt.Println("--> compiling sass")
 
 	// walk through the sass source dir
 	if err := filepath.Walk(sassSourceDir, func(path string, info os.FileInfo, err error) error {
