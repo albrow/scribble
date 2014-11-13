@@ -58,9 +58,10 @@ func compileSassFromPath(path string) {
 
 	// set up and execute the command, piping output to stdout
 	cmd := exec.Command("sassc", path, destPath)
-	cmd.Stdout = os.Stdout
-	err := cmd.Run()
+	response, err := cmd.CombinedOutput()
 	if err != nil {
-		panic(err)
+		fmt.Print("\a")
+		color.Printf("@r    sass error: %s\n", string(response))
+		return
 	}
 }
