@@ -39,6 +39,16 @@ func compileSass() {
 	}
 }
 
+func removeOldCss() {
+	if err := os.RemoveAll(sassDestDir); err != nil {
+		if !os.IsNotExist(err) {
+			// If the dir didn't exist, that's fine,
+			// for any other error, panic.
+			panic(err)
+		}
+	}
+}
+
 func compileSassFromPath(path string) {
 	// parse path and figure out destPath
 	destDir := strings.Replace(filepath.Dir(path), sassSourceDir, sassDestDir, 1)
