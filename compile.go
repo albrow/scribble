@@ -7,7 +7,6 @@ import (
 )
 
 func compile(watch bool) {
-	fmt.Println("Watched paths:", watchedPaths)
 	parseConfig()
 	fmt.Println("--> compiling")
 	fmt.Printf("    watch: %v\n", watch)
@@ -19,7 +18,6 @@ func compile(watch bool) {
 	if watch {
 		watchAll()
 	}
-	fmt.Println("Watched paths:", watchedPaths)
 }
 
 func removeOld() {
