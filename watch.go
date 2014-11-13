@@ -23,6 +23,7 @@ func watchAll() {
 
 	// walk through source dir and watch all subdirectories
 	// we have to do this because fsnotify is currently not recursive
+	watcher.Watch(sourceDir)
 	if err := filepath.Walk(sourceDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -54,6 +55,7 @@ func createWatcher() *fsnotify.Watcher {
 
 	// Process events
 	go func() {
+		defer recovery()
 		for {
 			select {
 			case ev := <-watcher.Event:
@@ -62,6 +64,7 @@ func createWatcher() *fsnotify.Watcher {
 					// ignore hidden system files
 					continue
 				}
+				fmt.Printf("ev: %+v\n", ev)
 				color.Printf("@y    CHANGED: %s\n", ev.Name)
 				compile(false)
 			case err := <-watcher.Error:
@@ -70,15 +73,4 @@ func createWatcher() *fsnotify.Watcher {
 		}
 	}()
 	return watcher
-}
-
-func removeAllWatchedPaths() {
-	watchMutex.Lock()
-	for _, p := range watchedPaths {
-		if err := watcher.RemoveWatch(p); err != nil {
-			panic(err)
-		}
-	}
-	watchedPaths = []string{}
-	watchMutex.Unlock()
 }

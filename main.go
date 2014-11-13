@@ -24,6 +24,7 @@ type Context map[string]interface{}
 var context = Context{}
 
 func main() {
+	defer recovery()
 	kingpin.Version(version)
 	cmd, err := app.Parse(os.Args[1:])
 	if err != nil {

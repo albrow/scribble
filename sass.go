@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func compileSass(watch bool) {
+func compileSass() {
 	fmt.Println("    compiling sass")
 
 	// walk through the sass source dir
@@ -56,12 +56,10 @@ func compileSassFromPath(path string) {
 		}
 	}
 
-	// set up and execute the command, piping output to stdout
+	// set up and execute the command, capturing the output only if there was an error
 	cmd := exec.Command("sassc", path, destPath)
 	response, err := cmd.CombinedOutput()
 	if err != nil {
-		fmt.Print("\a")
-		color.Printf("@r    sass error: %s\n", string(response))
-		return
+		chimeError(string(response))
 	}
 }

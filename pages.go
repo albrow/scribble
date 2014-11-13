@@ -70,7 +70,7 @@ func compilePageFromPath(path string) {
 	pageContext := context
 	if frontMatter != "" {
 		if _, err := toml.Decode(frontMatter, pageContext); err != nil {
-			panic(err)
+			chimeError(err)
 		}
 	}
 	layout := "base"
@@ -86,9 +86,7 @@ func compilePageFromPath(path string) {
 		},
 	})
 	if err != nil {
-		fmt.Print("\a")
-		color.Printf("@r%s\n", err)
-		return
+		chimeError(err)
 	}
 	destPath := strings.Replace(path, sourceDir, destDir, 1)
 	destPath = strings.Replace(destPath, ".ace", ".html", 1)
@@ -105,8 +103,6 @@ func compilePageFromPath(path string) {
 		}
 	}
 	if err := tpl.Execute(destFile, pageContext); err != nil {
-		fmt.Print("\a")
-		color.Printf("@r%s\n", err)
-		return
+		chimeError(err)
 	}
 }

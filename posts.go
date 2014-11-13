@@ -96,9 +96,7 @@ func compilePosts() {
 		FuncMap:       funcMap,
 	})
 	if err != nil {
-		fmt.Print("\a")
-		color.Printf("@r%s\n", err)
-		return
+		chimeError(err)
 	}
 	for _, p := range posts {
 		p.compile(tpl)
@@ -131,9 +129,7 @@ func (p Post) compile(tpl *template.Template) {
 	}
 	context["Post"] = p
 	if err := tpl.Execute(file, context); err != nil {
-		fmt.Print("\a")
-		color.Printf("@r%s\n", err)
-		return
+		chimeError(err)
 	}
 	delete(context, "Post")
 }
