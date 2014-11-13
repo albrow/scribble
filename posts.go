@@ -13,21 +13,29 @@ import (
 	"strings"
 )
 
-var posts = []Post{}
+var (
+	posts    = []*Post{}
+	postsMap = map[string]*Post{} // a map of source path to post
+)
 
 type Post struct {
 	Title       string        `toml:"title"`
 	Author      string        `toml:"author"`
 	Description string        `toml:"description"`
-	Content     template.HTML `toml:"-"`
-	Url         string        `toml:"-"`
-	Dir         string        `toml:"-"`
+	Url         string        `toml:"-"` // the url for the post, not including protocol or domain name (useful for creating links)
+	Content     template.HTML `toml:"-"` // the html content for the post (parsed from markdown source)
+	dest        string        `toml:"-"` // the full destination path
+	src         string        `toml:"-"` // the full source path
 }
 
+// parsePosts walks through postsDir, creates a new Post object for
+// each markdown file there, and parses the content and frontmatter
+// from the markdown files. It removes all the old posts and appends
+// each new post created to posts and postsMap.
 func parsePosts() {
-	fmt.Printf("    parsing posts in %s\n", postsDir)
+	fmt.Printf("    reading posts in %s\n", postsDir)
 	// remove any old posts
-	posts = []Post{}
+	posts = []*Post{}
 	context["Posts"] = posts
 	// walk through the source/posts dir
 	if err := filepath.Walk(postsDir, func(path string, info os.FileInfo, err error) error {
@@ -37,13 +45,9 @@ func parsePosts() {
 		// check if markdown file (ignore everything else)
 		if filepath.Ext(path) == ".md" {
 			// create a new Post object from the file and append it to posts
-			p, err := createPostFromPath(path, info)
-			if err != nil {
-				return err
-			}
-			posts = append(posts, p)
+			p := createPostFromPath(path)
+			p.parse()
 		}
-		context["Posts"] = posts
 		return nil
 	}); err != nil {
 		panic(err)
@@ -51,45 +55,59 @@ func parsePosts() {
 	fmt.Printf("    found %d posts\n", len(posts))
 }
 
-func createPostFromPath(path string, info os.FileInfo) (Post, error) {
+func createPostFromPath(path string) *Post {
 	// create post object
-	name := strings.TrimSuffix(info.Name(), filepath.Ext(path))
-	p := Post{
-		Url: "/" + name,
-		Dir: name,
+	name := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
+	p := &Post{
+		Url:  "/" + name,
+		dest: destDir + "/" + name,
+		src:  path,
 	}
-
-	// open the source file
-	file, err := os.Open(path)
-	if err != nil {
-		return p, err
-	}
-
-	// extract and parse front matter
-	if err := p.parseFromFile(file); err != nil {
-		return p, err
-	}
-
-	return p, nil
+	posts = append(posts, p)
+	postsMap[path] = p
+	context["Posts"] = posts
+	return p
 }
 
-func (p *Post) parseFromFile(file *os.File) error {
+func getPostByPath(path string) *Post {
+	return postsMap[path]
+}
+
+func getOrCreatePostFromPath(path string) *Post {
+	if p, found := postsMap[path]; found {
+		return p
+	} else {
+		return createPostFromPath(path)
+	}
+}
+
+// parse reads from the source file and sets the content and metadata fields
+// for the post
+func (p *Post) parse() {
+	// open the source file
+	file, err := os.Open(p.src)
+	if err != nil {
+		panic(err)
+	}
 	r := bufio.NewReader(file)
+
+	// split the file into frontmatter and markdown content
 	frontMatter, content, err := split(r)
 	if err != nil {
-		return err
+		panic(err)
 	}
+
+	// decode the frontmatter
 	if _, err := toml.Decode(frontMatter, p); err != nil {
-		return err
+		panic(err)
 	}
+
+	// parse the markdown content and set p.Content
 	p.Content = template.HTML(blackfriday.MarkdownCommon([]byte(content)))
-	return nil
 }
 
-func compilePosts() {
-	fmt.Println("    compiling posts")
+func getPostTemplate() *template.Template {
 	// TODO: detect layout from frontmatter
-	// load the template
 	tpl, err := ace.Load("_layouts/base", "_views/post", &ace.Options{
 		DynamicReload: true,
 		BaseDir:       sourceDir,
@@ -98,16 +116,31 @@ func compilePosts() {
 	if err != nil {
 		chimeError(err)
 	}
+	return tpl
+}
+
+// compilePosts compiles all posts in posts
+func compilePosts() {
+	fmt.Println("    compiling posts")
+	tpl := getPostTemplate()
 	for _, p := range posts {
-		p.compile(tpl)
+		p.compileWithTemplate(tpl)
 	}
 }
 
-func (p Post) compile(tpl *template.Template) {
-	dirName := destDir + "/" + p.Dir
+// compile compiles a single post and writes it to
+// the appropriate file in destDir
+func (p Post) compile() {
+	p.compileWithTemplate(getPostTemplate())
+}
 
-	// make the directory for each post
-	err := os.Mkdir(dirName, os.ModePerm|os.ModeDir)
+// compileWithTemplate compiles a single post using the given
+// template and writes it to the appropriate file in destDir.
+// It is useful for cases where you want to reuse the same
+// template to compile more than one post in a for loop.
+func (p Post) compileWithTemplate(tpl *template.Template) {
+	// make the directory for the post
+	err := os.Mkdir(p.dest, os.ModePerm)
 	if err != nil {
 		// if the directory already exists, that's fine
 		// if there was some other error, panic
@@ -117,8 +150,8 @@ func (p Post) compile(tpl *template.Template) {
 	}
 
 	// make an index.html file inside that directory
-	destPath := dirName + "/index.html"
-	color.Printf("@g    CREATE: %s\n", destPath)
+	destPath := p.dest + "/index.html"
+	color.Printf("@g    CREATE: %s -> %s\n", p.src, destPath)
 	file, err := os.Create(destPath)
 	if err != nil {
 		// if the file already exists, that's fine
@@ -132,4 +165,23 @@ func (p Post) compile(tpl *template.Template) {
 		chimeError(err)
 	}
 	delete(context, "Post")
+}
+
+// remove removes all the files in destDir associated with the post
+// and removes it from posts and postsMap
+func (p *Post) remove() {
+	if err := os.RemoveAll(p.dest); err != nil {
+		if !os.IsNotExist(err) {
+			// if the file doesn't exist that's fine,
+			// otherwise throw an error
+			panic(err)
+		}
+	}
+	delete(postsMap, p.src)
+	for i, other := range posts {
+		if p == other {
+			posts = append(posts[:i], posts[i+1:]...)
+		}
+	}
+	fmt.Println("posts:", posts)
 }

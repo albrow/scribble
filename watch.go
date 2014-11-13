@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 )
 
@@ -74,9 +75,38 @@ func createWatcher() *fsnotify.Watcher {
 					continue
 				}
 				if fileDidChange(ev.Name) {
-					// if the file was changed, trigger a recompile
 					color.Printf("@y    CHANGED: %s\n", ev.Name)
-					compile(false)
+					// if the file was changed, trigger a recompile
+					// we want to detect the extension to figure out which
+					// parts of the site we need to recompile
+					if strings.Contains(filepath.Dir(ev.Name), postsDir) {
+						// A post was changed
+						if ev.IsCreate() || ev.IsModify() {
+							// recompile the single post
+							p := getOrCreatePostFromPath(ev.Name)
+							p.parse()
+							p.compile()
+							// recompile all pages, since they may depend on posts
+							compilePages()
+						} else if ev.IsRename() {
+							// recompile all posts
+							// TODO: detect which post was renamed and only recompile that one?
+							if p := getPostByPath(ev.Name); p != nil {
+								p.remove()
+							}
+							parsePosts()
+							compilePosts()
+							compilePages()
+						} else if ev.IsDelete() {
+							if p := getPostByPath(ev.Name); p != nil {
+								p.remove()
+							}
+							// recompile all pages, since they may depend on posts
+							compilePages()
+						}
+					} else {
+						compile(false)
+					}
 				}
 			case err := <-watcher.Error:
 				panic(err)
