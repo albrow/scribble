@@ -1,4 +1,4 @@
-package main
+package lib
 
 import (
 	"fmt"
@@ -6,7 +6,11 @@ import (
 	"path/filepath"
 )
 
-func compile(watch bool) {
+type Context map[string]interface{}
+
+var context = Context{}
+
+func Compile(watch bool) {
 	parseConfig()
 	fmt.Println("--> compiling")
 	removeAllOld()

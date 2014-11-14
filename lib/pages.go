@@ -1,4 +1,4 @@
-package main
+package lib
 
 import (
 	"bufio"
@@ -42,13 +42,7 @@ func compilePages() {
 				if err != nil {
 					panic(err)
 				}
-				if err := os.MkdirAll(filepath.Dir(destPath), os.ModePerm); err != nil {
-					panic(err)
-				}
-				destFile, err := os.Create(destPath)
-				if err != nil {
-					panic(err)
-				}
+				destFile := createFileWithPath(destPath)
 				if _, err := io.Copy(destFile, srcFile); err != nil {
 					panic(err)
 				}
@@ -90,18 +84,8 @@ func compilePageFromPath(path string) {
 	}
 	destPath := strings.Replace(path, sourceDir, destDir, 1)
 	destPath = strings.Replace(destPath, ".ace", ".html", 1)
-	if err := os.MkdirAll(filepath.Dir(destPath), os.ModePerm); err != nil {
-		panic(err)
-	}
 	color.Printf("@g    CREATE: %s -> %s\n", path, destPath)
-	destFile, err := os.Create(destPath)
-	if err != nil {
-		// if the file already exists, that's fine
-		// if there was some other error, panic
-		if !os.IsExist(err) {
-			panic(err)
-		}
-	}
+	destFile := createFileWithPath(destPath)
 	if err := tpl.Execute(destFile, pageContext); err != nil {
 		chimeError(err)
 	}

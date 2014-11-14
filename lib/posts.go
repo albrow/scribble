@@ -1,4 +1,4 @@
-package main
+package lib
 
 import (
 	"bufio"
@@ -139,27 +139,10 @@ func (p Post) compile() {
 // It is useful for cases where you want to reuse the same
 // template to compile more than one post in a for loop.
 func (p Post) compileWithTemplate(tpl *template.Template) {
-	// make the directory for the post
-	err := os.Mkdir(p.dest, os.ModePerm)
-	if err != nil {
-		// if the directory already exists, that's fine
-		// if there was some other error, panic
-		if !os.IsExist(err) {
-			panic(err)
-		}
-	}
-
-	// make an index.html file inside that directory
+	// make an index.html file inside the appropriate directory
 	destPath := p.dest + "/index.html"
 	color.Printf("@g    CREATE: %s -> %s\n", p.src, destPath)
-	file, err := os.Create(destPath)
-	if err != nil {
-		// if the file already exists, that's fine
-		// if there was some other error, panic
-		if !os.IsExist(err) {
-			panic(err)
-		}
-	}
+	file := createFileWithPath(destPath)
 	context["Post"] = p
 	if err := tpl.Execute(file, context); err != nil {
 		chimeError(err)

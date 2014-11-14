@@ -1,4 +1,4 @@
-package main
+package lib
 
 import (
 	"fmt"
@@ -65,7 +65,7 @@ func createWatcher() *fsnotify.Watcher {
 
 	// Process events
 	go func() {
-		defer recovery()
+		defer Recovery()
 		for {
 			select {
 			case ev := <-watcher.Event:
@@ -87,7 +87,7 @@ func createWatcher() *fsnotify.Watcher {
 						removeOldCss()
 						compileSass()
 					} else {
-						compile(false)
+						Compile(false)
 					}
 				}
 			case err := <-watcher.Error:

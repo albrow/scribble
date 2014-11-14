@@ -1,4 +1,4 @@
-package main
+package lib
 
 import (
 	"bytes"
@@ -9,7 +9,7 @@ import (
 
 var fullStackTrace = false
 
-func recovery() {
+func Recovery() {
 	if err := recover(); err != nil {
 		// convert err to a string
 		var errMsg string

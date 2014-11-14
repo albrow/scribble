@@ -1,4 +1,4 @@
-package main
+package lib
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func serve(port int) {
+func Serve(port int) {
 	fmt.Printf("--> serving on port %d\n", port)
 	// use negroni to serve destDir on port
 	destFileSystem := http.Dir(destDir)
