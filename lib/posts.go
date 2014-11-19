@@ -10,7 +10,9 @@ import (
 	"html/template"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
+	"time"
 )
 
 var (
@@ -22,6 +24,7 @@ type Post struct {
 	Title       string        `toml:"title"`
 	Author      string        `toml:"author"`
 	Description string        `toml:"description"`
+	Date        time.Time     `toml:"date"`
 	Url         string        `toml:"-"` // the url for the post, not including protocol or domain name (useful for creating links)
 	Content     template.HTML `toml:"-"` // the html content for the post (parsed from markdown source)
 	dest        string        `toml:"-"` // the full destination path
@@ -52,7 +55,12 @@ func parsePosts() {
 	}); err != nil {
 		panic(err)
 	}
+	// Sort the posts
+	sort.Stable(Posts(posts))
 	fmt.Printf("    found %d posts\n", len(posts))
+
+	// Add to context
+	context["Posts"] = posts
 }
 
 func createPostFromPath(path string) *Post {
@@ -65,7 +73,6 @@ func createPostFromPath(path string) *Post {
 	}
 	posts = append(posts, p)
 	postsMap[path] = p
-	context["Posts"] = posts
 	return p
 }
 
@@ -167,4 +174,19 @@ func (p *Post) remove() {
 		}
 	}
 	fmt.Println("posts:", posts)
+}
+
+// The Posts type is used only for sorting
+type Posts []*Post
+
+func (p Posts) Len() int {
+	return len(p)
+}
+
+func (p Posts) Less(i, j int) bool {
+	return p[i].Date.Before(p[j].Date)
+}
+
+func (p Posts) Swap(i, j int) {
+	p[i], p[j] = p[j], p[i]
 }
