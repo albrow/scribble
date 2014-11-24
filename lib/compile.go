@@ -14,23 +14,25 @@ func Compile(watch bool) {
 	parseConfig()
 	fmt.Println("--> compiling")
 	removeAllOld()
-	parsePosts()
-	compileSass()
-	compilePages()
-	compilePosts()
+	// parsePosts()
+
 	if watch {
 		watchAll()
 	}
 }
 
+func GetContext() Context {
+	return context
+}
+
 func removeAllOld() {
 	fmt.Println("    removing old files")
 	// walk through the dest dir
-	if err := filepath.Walk(destDir, func(path string, info os.FileInfo, err error) error {
+	if err := filepath.Walk(DestDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
-		if info.Name() == destDir {
+		if info.Name() == DestDir {
 			// ignore the destDir itself
 			return nil
 		} else if info.IsDir() {

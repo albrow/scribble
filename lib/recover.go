@@ -23,7 +23,7 @@ func Recovery() {
 		_, file, line, _ := runtime.Caller(2)
 
 		// Log the error and the line number
-		chimeError(errMsg)
+		ChimeError(errMsg)
 		fmt.Printf("    Originated from %s:%d\n", file, line)
 
 		// get the stack traces and print it out

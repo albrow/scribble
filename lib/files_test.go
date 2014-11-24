@@ -19,14 +19,15 @@ func TestCreateFile(t *testing.T) {
 	}()
 	defer func() {
 		// cleanup by removing all the files we created
-		if err := os.RemoveAll("/tmp/test"); err != nil {
-			panic(err)
-		}
+		os.RemoveAll("/tmp/test")
 	}()
 	rand.Seed(time.Now().Unix())
 	path := fmt.Sprintf("/tmp/test/testFile%d.txt", rand.Int())
 	// Open a temp file and write to it
-	f := createFileWithPath(path)
+	f, err := CreateFileWithPath(path)
+	if err != nil {
+		t.Fatal(err)
+	}
 	defer f.Close()
 	data := "Hello, this is a test!\n"
 	if _, err := f.WriteString(data); err != nil {

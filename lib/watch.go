@@ -8,7 +8,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"strings"
 	"sync"
 )
 
@@ -33,8 +32,8 @@ func watchAll() {
 
 	// walk through source dir and watch all subdirectories
 	// we have to do this because fsnotify is currently not recursive
-	watcher.Watch(sourceDir)
-	if err := filepath.Walk(sourceDir, func(path string, info os.FileInfo, err error) error {
+	watcher.Watch(SourceDir)
+	if err := filepath.Walk(SourceDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -76,19 +75,7 @@ func createWatcher() *fsnotify.Watcher {
 				}
 				if fileDidChange(ev.Name) {
 					color.Printf("@y    CHANGED: %s\n", ev.Name)
-					// if the file was changed, trigger a recompile
-					// we want to detect the extension to figure out which
-					// parts of the site we need to recompile
-					if strings.Contains(filepath.Dir(ev.Name), postsDir) {
-						// a post was changed
-						reactToPostChange(ev)
-					} else if filepath.Ext(ev.Name) == ".scss" {
-						// a sass file was changed
-						removeOldCss()
-						compileSass()
-					} else {
-						Compile(false)
-					}
+					// TODO: rewrite this
 				}
 			case err := <-watcher.Error:
 				panic(err)
@@ -98,31 +85,31 @@ func createWatcher() *fsnotify.Watcher {
 	return watcher
 }
 
-func reactToPostChange(ev *fsnotify.FileEvent) {
-	if ev.IsCreate() || ev.IsModify() {
-		// recompile the single post
-		p := getOrCreatePostFromPath(ev.Name)
-		p.parse()
-		p.compile()
-		// recompile all pages, since they may depend on posts
-		compilePages()
-	} else if ev.IsRename() {
-		// recompile all posts
-		// TODO: detect which post was renamed and only recompile that one?
-		if p := getPostByPath(ev.Name); p != nil {
-			p.remove()
-		}
-		parsePosts()
-		compilePosts()
-		compilePages()
-	} else if ev.IsDelete() {
-		if p := getPostByPath(ev.Name); p != nil {
-			p.remove()
-		}
-		// recompile all pages, since they may depend on posts
-		compilePages()
-	}
-}
+// func reactToPostChange(ev *fsnotify.FileEvent) {
+// 	if ev.IsCreate() || ev.IsModify() {
+// 		// recompile the single post
+// 		p := getOrCreatePostFromPath(ev.Name)
+// 		p.parse()
+// 		p.compile()
+// 		// recompile all pages, since they may depend on posts
+// 		compilePages()
+// 	} else if ev.IsRename() {
+// 		// recompile all posts
+// 		// TODO: detect which post was renamed and only recompile that one?
+// 		if p := getPostByPath(ev.Name); p != nil {
+// 			p.remove()
+// 		}
+// 		parsePosts()
+// 		compilePosts()
+// 		compilePages()
+// 	} else if ev.IsDelete() {
+// 		if p := getPostByPath(ev.Name); p != nil {
+// 			p.remove()
+// 		}
+// 		// recompile all pages, since they may depend on posts
+// 		compilePages()
+// 	}
+// }
 
 func fileDidChange(path string) bool {
 	if hash, found := fileHashes[path]; !found {

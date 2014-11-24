@@ -7,11 +7,11 @@ import (
 
 const frontMatterDelim = "+++\n"
 
-// split reads from r and splits its contents into two pieces:
+// SplitFrontMatter reads from r and splits its contents into two pieces:
 // frontmatter and other content. If there is no frontmatter,
 // then first return value will be an empty string.
-func split(r *bufio.Reader) (frontMatter string, content string, err error) {
-	if containsFrontMatter(r) {
+func SplitFrontMatter(r *bufio.Reader) (frontMatter string, content string, err error) {
+	if ContainsFrontMatter(r) {
 		// split the file into two pieces according to where we
 		// find the closing delimiter
 		frontMatter := ""
@@ -49,7 +49,7 @@ func split(r *bufio.Reader) (frontMatter string, content string, err error) {
 // frontmatter. It checks the first couple of bytes to see if they
 // equal the front matter delimiter without changing the position of
 // r.
-func containsFrontMatter(r *bufio.Reader) bool {
+func ContainsFrontMatter(r *bufio.Reader) bool {
 	firstBytes, err := r.Peek(4)
 	if err != nil {
 		panic(err)

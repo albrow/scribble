@@ -7,7 +7,7 @@ import (
 
 // a list of config vars
 var (
-	sourceDir, destDir, postsDir, sassSourceDir, sassDestDir string
+	SourceDir, DestDir, PostsDir, LayoutsDir string
 )
 
 // parseConfig reads and parses config.toml, setting the values
@@ -18,11 +18,10 @@ func parseConfig() {
 		panic(err)
 	}
 	vars := map[string]*string{
-		"sourceDir":     &sourceDir,
-		"destDir":       &destDir,
-		"postsDir":      &postsDir,
-		"sassSourceDir": &sassSourceDir,
-		"sassDestDir":   &sassDestDir,
+		"sourceDir":  &SourceDir,
+		"destDir":    &DestDir,
+		"postsDir":   &PostsDir,
+		"layoutsDir": &LayoutsDir,
 	}
 	setGlobalConfig(vars, context)
 }
