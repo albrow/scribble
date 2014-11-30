@@ -10,25 +10,17 @@ import (
 )
 
 type SassCompilerType struct {
-	pathMatch string
+	filenameMatch string
 }
 
-const sassPathMatch = "*.scss"
+const sassFilenameMatch = "*.scss"
 
 var SassCompiler = SassCompilerType{
-	pathMatch: sassPathMatch,
+	filenameMatch: sassFilenameMatch,
 }
 
-func (s SassCompilerType) PathMatch() string {
-	return s.pathMatch
-}
-
-func (s SassCompilerType) IgnoreHidden() bool {
-	return true
-}
-
-func (s SassCompilerType) IgnoreUnderscore() bool {
-	return true
+func (s SassCompilerType) GetWalkFunc(paths *[]string) filepath.WalkFunc {
+	return filenameMatchWalkFunc(paths, s.filenameMatch, true, true)
 }
 
 func (s SassCompilerType) Compile(srcPath string, destDir string) error {

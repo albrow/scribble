@@ -7,7 +7,7 @@ import (
 
 // a list of config vars
 var (
-	SourceDir, DestDir, PostsDir, LayoutsDir string
+	SourceDir, DestDir, PostsDir, LayoutsDir, ViewsDir string
 )
 
 // parseConfig reads and parses config.toml, setting the values

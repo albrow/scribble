@@ -1,0 +1,5 @@
+= content main
+  a href="/" &larr; Back to Home
+  h2 {{.Post.Title}}
+  p.
+    {{.Post.Content}}

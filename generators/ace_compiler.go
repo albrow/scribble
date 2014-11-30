@@ -13,25 +13,17 @@ import (
 )
 
 type AceCompilerType struct {
-	pathMatch string
+	filenameMatch string
 }
 
-const acePathMatch = "*.ace"
+const aceFilenameMatch = "*.ace"
 
 var AceCompiler = AceCompilerType{
-	pathMatch: acePathMatch,
+	filenameMatch: aceFilenameMatch,
 }
 
-func (a AceCompilerType) PathMatch() string {
-	return a.pathMatch
-}
-
-func (a AceCompilerType) IgnoreHidden() bool {
-	return true
-}
-
-func (a AceCompilerType) IgnoreUnderscore() bool {
-	return true
+func (a AceCompilerType) GetWalkFunc(paths *[]string) filepath.WalkFunc {
+	return filenameMatchWalkFunc(paths, a.filenameMatch, true, true)
 }
 
 func (a AceCompilerType) Compile(srcPath string, destDir string) error {
