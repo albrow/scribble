@@ -57,5 +57,10 @@ func (p PostsCompilerType) Compile(srcPath string, destDir string) error {
 }
 
 func (p PostsCompilerType) CompileAll(srcPaths []string, destDir string) error {
+	for _, srcPath := range srcPaths {
+		if err := p.Compile(srcPath, destDir); err != nil {
+			return err
+		}
+	}
 	return nil
 }

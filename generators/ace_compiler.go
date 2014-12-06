@@ -78,6 +78,10 @@ func (a AceCompilerType) Compile(srcPath string, destDir string) error {
 }
 
 func (a AceCompilerType) CompileAll(srcPaths []string, destDir string) error {
-	fmt.Println("Call to compile all: ", srcPaths)
+	for _, srcPath := range srcPaths {
+		if err := a.Compile(srcPath, destDir); err != nil {
+			return err
+		}
+	}
 	return nil
 }

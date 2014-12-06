@@ -49,6 +49,10 @@ func (s SassCompilerType) Compile(srcPath string, destDir string) error {
 }
 
 func (s SassCompilerType) CompileAll(srcPaths []string, destDir string) error {
-	fmt.Println("Call to compile all: ", srcPaths)
+	for _, srcPath := range srcPaths {
+		if err := s.Compile(srcPath, destDir); err != nil {
+			return err
+		}
+	}
 	return nil
 }
