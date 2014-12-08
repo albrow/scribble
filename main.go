@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/albrow/scribble/lib"
+	"github.com/albrow/scribble/util"
 	"gopkg.in/alecthomas/kingpin.v1"
 	"os"
 )
@@ -21,7 +21,7 @@ const (
 )
 
 func main() {
-	defer lib.Recovery()
+	defer util.Recovery()
 	kingpin.Version(version)
 	cmd, err := app.Parse(os.Args[1:])
 	if err != nil {
@@ -30,10 +30,10 @@ func main() {
 	}
 	switch cmd {
 	case compileCmd.FullCommand():
-		lib.Compile(*compileWatch)
+		compile(*compileWatch)
 	case serveCmd.FullCommand():
-		lib.Compile(true)
-		lib.Serve(*servePort)
+		compile(true)
+		serve(*servePort)
 	default:
 		app.Usage(os.Stdout)
 		os.Exit(0)

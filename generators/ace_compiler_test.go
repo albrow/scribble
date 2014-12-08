@@ -1,7 +1,7 @@
 package generators
 
 import (
-	"github.com/albrow/scribble/lib"
+	"github.com/albrow/scribble/config"
 	"os"
 	"testing"
 )
@@ -56,8 +56,8 @@ func TestAceCompile(t *testing.T) {
 	}
 
 	// Attempt to compile the ace files
-	lib.LayoutsDir = "_layouts"
-	lib.SourceDir = root
+	config.LayoutsDir = "_layouts"
+	config.SourceDir = root
 	if err := AceCompiler.Compile(root+"index.ace", root+"public"); err != nil {
 		t.Fatal(err)
 	}

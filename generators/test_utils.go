@@ -1,7 +1,7 @@
 package generators
 
 import (
-	"github.com/albrow/scribble/lib"
+	"github.com/albrow/scribble/util"
 	"io"
 	"io/ioutil"
 	"os"
@@ -11,7 +11,7 @@ import (
 
 func createEmptyFiles(paths []string) error {
 	for _, path := range paths {
-		if f, err := lib.CreateFileWithPath(path); err != nil {
+		if f, err := util.CreateFileWithPath(path); err != nil {
 			return err
 		} else {
 			f.Close()
@@ -40,7 +40,7 @@ func checkPathsMatch(t *testing.T, compiler Compiler, srcDir string, expectedPat
 // expects a map of destination path to source path
 func copyFiles(paths map[string]string) error {
 	for destPath, srcPath := range paths {
-		dest, err := lib.CreateFileWithPath(destPath)
+		dest, err := util.CreateFileWithPath(destPath)
 		if err != nil {
 			return err
 		}

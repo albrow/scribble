@@ -1,17 +1,14 @@
-package lib
+package main
 
 import (
 	"fmt"
+	"github.com/albrow/scribble/config"
 	"os"
 	"path/filepath"
 )
 
-type Context map[string]interface{}
-
-var context = Context{}
-
-func Compile(watch bool) {
-	parseConfig()
+func compile(watch bool) {
+	config.Parse()
 	fmt.Println("--> compiling")
 	removeAllOld()
 	// parsePosts()
@@ -21,18 +18,14 @@ func Compile(watch bool) {
 	}
 }
 
-func GetContext() Context {
-	return context
-}
-
 func removeAllOld() {
 	fmt.Println("    removing old files")
 	// walk through the dest dir
-	if err := filepath.Walk(DestDir, func(path string, info os.FileInfo, err error) error {
+	if err := filepath.Walk(config.DestDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
-		if info.Name() == DestDir {
+		if info.Name() == config.DestDir {
 			// ignore the destDir itself
 			return nil
 		} else if info.IsDir() {

@@ -1,8 +1,10 @@
-package lib
+package main
 
 import (
 	"fmt"
 	"github.com/OneOfOne/xxhash/native"
+	"github.com/albrow/scribble/config"
+	"github.com/albrow/scribble/util"
 	"github.com/howeyc/fsnotify"
 	"github.com/wsxiaoys/terminal/color"
 	"io"
@@ -32,8 +34,8 @@ func watchAll() {
 
 	// walk through source dir and watch all subdirectories
 	// we have to do this because fsnotify is currently not recursive
-	watcher.Watch(SourceDir)
-	if err := filepath.Walk(SourceDir, func(path string, info os.FileInfo, err error) error {
+	watcher.Watch(config.SourceDir)
+	if err := filepath.Walk(config.SourceDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -64,7 +66,7 @@ func createWatcher() *fsnotify.Watcher {
 
 	// Process events
 	go func() {
-		defer Recovery()
+		defer util.Recovery()
 		for {
 			select {
 			case ev := <-watcher.Event:

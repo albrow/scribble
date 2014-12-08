@@ -1,8 +1,9 @@
-package lib
+package config
 
 import (
 	"fmt"
 	"github.com/BurntSushi/toml"
+	"github.com/albrow/scribble/context"
 )
 
 // a list of config vars
@@ -10,11 +11,11 @@ var (
 	SourceDir, DestDir, PostsDir, LayoutsDir, ViewsDir string
 )
 
-// parseConfig reads and parses config.toml, setting the values
+// Parse reads and parses config.toml, setting the values
 // of the above config variables.
-func parseConfig() {
+func Parse() {
 	fmt.Println("--> parsing config.toml")
-	if _, err := toml.DecodeFile("config.toml", context); err != nil {
+	if _, err := toml.DecodeFile("config.toml", context.GetContext()); err != nil {
 		panic(err)
 	}
 	vars := map[string]*string{
@@ -23,11 +24,11 @@ func parseConfig() {
 		"postsDir":   &PostsDir,
 		"layoutsDir": &LayoutsDir,
 	}
-	setGlobalConfig(vars, context)
+	setConfig(vars, context.GetContext())
 }
 
-// setGlobalConfig sets the values of vars based on the contents of data
-func setGlobalConfig(vars map[string]*string, data map[string]interface{}) {
+// setConfig sets the values of vars based on the contents of data
+func setConfig(vars map[string]*string, data map[string]interface{}) {
 	for name, holder := range vars {
 		if value, found := data[name]; found {
 			(*holder) = fmt.Sprint(value)

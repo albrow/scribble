@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"github.com/BurntSushi/toml"
 	"github.com/albrow/ace"
-	"github.com/albrow/scribble/lib"
+	"github.com/albrow/scribble/config"
+	"github.com/albrow/scribble/context"
+	"github.com/albrow/scribble/util"
 	"github.com/wsxiaoys/terminal/color"
 	"os"
 	"path/filepath"
@@ -41,8 +43,8 @@ func (a AceCompilerType) Compile(srcPath string, destDir string) error {
 	reader := bufio.NewReader(srcFile)
 
 	// Split source file into front matter and content
-	frontMatter, content, err := lib.SplitFrontMatter(reader)
-	pageContext := lib.GetContext()
+	frontMatter, content, err := util.SplitFrontMatter(reader)
+	pageContext := context.GetContext()
 	if frontMatter != "" {
 		if _, err := toml.Decode(frontMatter, pageContext); err != nil {
 			return err
@@ -54,11 +56,11 @@ func (a AceCompilerType) Compile(srcPath string, destDir string) error {
 	if otherLayout, found := pageContext["layout"]; found {
 		layout = otherLayout.(string)
 	}
-	layoutPath := lib.LayoutsDir + "/" + layout
+	layoutPath := config.LayoutsDir + "/" + layout
 	tpl, err := ace.Load(layoutPath, srcPath, &ace.Options{
 		DynamicReload: true,
-		BaseDir:       lib.SourceDir,
-		FuncMap:       lib.FuncMap,
+		BaseDir:       config.SourceDir,
+		FuncMap:       context.FuncMap,
 		Asset: func(name string) ([]byte, error) {
 			return []byte(content), nil
 		},
@@ -67,7 +69,7 @@ func (a AceCompilerType) Compile(srcPath string, destDir string) error {
 		return err
 	}
 
-	destFile, err := lib.CreateFileWithPath(destPath)
+	destFile, err := util.CreateFileWithPath(destPath)
 	if err != nil {
 		return err
 	}

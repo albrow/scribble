@@ -1,7 +1,7 @@
 package generators
 
 import (
-	"github.com/albrow/scribble/lib"
+	"github.com/albrow/scribble/config"
 	"os"
 	"testing"
 )
@@ -32,7 +32,7 @@ func TestPostsCompile(t *testing.T) {
 
 	// Only some paths are expected to be matched by the PostsCompiler,
 	// the other files should be ignored.
-	lib.PostsDir = root + "_posts"
+	config.PostsDir = root + "_posts"
 	PostsCompiler.Init()
 	expectedPaths := []string{
 		root + "_posts/post.md",
@@ -54,10 +54,10 @@ func TestPostsCompile(t *testing.T) {
 	}
 
 	// Attempt to compile the posts
-	lib.LayoutsDir = "_layouts"
-	lib.SourceDir = root
-	lib.PostsDir = "_posts"
-	lib.ViewsDir = "_views"
+	config.LayoutsDir = "_layouts"
+	config.SourceDir = root
+	config.PostsDir = "_posts"
+	config.ViewsDir = "_views"
 	if err := PostsCompiler.Compile(root+"_posts/post.md", root+"public"); err != nil {
 		t.Fatal(err)
 	}
