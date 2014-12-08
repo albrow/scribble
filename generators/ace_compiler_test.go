@@ -11,12 +11,12 @@ func TestAceCompile(t *testing.T) {
 	// test will live
 	root := "/tmp/ace_compiler/"
 	defer func() {
-		// Remove everything after we're done
-		if err := os.RemoveAll(root); err != nil {
-			if !os.IsNotExist(err) {
-				panic(err)
-			}
-		}
+		// // Remove everything after we're done
+		// if err := os.RemoveAll(root); err != nil {
+		// 	if !os.IsNotExist(err) {
+		// 		panic(err)
+		// 	}
+		// }
 	}()
 
 	// Create a few files.
@@ -57,7 +57,7 @@ func TestAceCompile(t *testing.T) {
 
 	// Attempt to compile the ace files
 	config.LayoutsDir = "_layouts"
-	config.SourceDir = root
+	config.SourceDir = root[0 : len(root)-1]
 	if err := AceCompiler.Compile(root+"index.ace", root+"public"); err != nil {
 		t.Fatal(err)
 	}

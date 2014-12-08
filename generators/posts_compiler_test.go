@@ -32,7 +32,8 @@ func TestPostsCompile(t *testing.T) {
 
 	// Only some paths are expected to be matched by the PostsCompiler,
 	// the other files should be ignored.
-	config.PostsDir = root + "_posts"
+	config.SourceDir = root[0 : len(root)-1]
+	config.PostsDir = "_posts"
 	PostsCompiler.Init()
 	expectedPaths := []string{
 		root + "_posts/post.md",
@@ -55,8 +56,6 @@ func TestPostsCompile(t *testing.T) {
 
 	// Attempt to compile the posts
 	config.LayoutsDir = "_layouts"
-	config.SourceDir = root
-	config.PostsDir = "_posts"
 	config.ViewsDir = "_views"
 	if err := PostsCompiler.Compile(root+"_posts/post.md", root+"public"); err != nil {
 		t.Fatal(err)

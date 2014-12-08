@@ -23,6 +23,7 @@ func Parse() {
 		"destDir":    &DestDir,
 		"postsDir":   &PostsDir,
 		"layoutsDir": &LayoutsDir,
+		"viewsDir":   &ViewsDir,
 	}
 	setConfig(vars, context.GetContext())
 }

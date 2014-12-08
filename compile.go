@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"github.com/albrow/scribble/config"
+	"github.com/albrow/scribble/generators"
+	"github.com/albrow/scribble/util"
 	"os"
 	"path/filepath"
 )
@@ -11,11 +13,12 @@ func compile(watch bool) {
 	config.Parse()
 	fmt.Println("--> compiling")
 	removeAllOld()
-	// parsePosts()
-
-	if watch {
-		watchAll()
+	if err := generators.CompileAll(); err != nil {
+		util.ChimeError(err)
 	}
+	// if watch {
+	// 	watchAll()
+	// }
 }
 
 func removeAllOld() {

@@ -1,12 +1,13 @@
 package generators
 
 import (
+	"github.com/albrow/scribble/config"
 	"github.com/howeyc/fsnotify"
 	"os"
 	"path/filepath"
 )
 
-var Compilers = []Compiler{SassCompiler, AceCompiler, PostsCompiler}
+var Compilers = []Compiler{&PostsCompiler, &SassCompiler, &AceCompiler}
 
 type Initer interface {
 	// Init allows a Compiler or Watcher to do any necessary
@@ -54,6 +55,27 @@ func FindPaths(root string, w Walker) ([]string, error) {
 		return nil, err
 	}
 	return paths, nil
+}
+
+// CompileAll compiles all files in SrcDir by delegating each path to
+// it's corresponding Compiler. If a path in SrcDir does not match any Compiler,
+// it will be copied to DestDir directly. Any files or directories that start
+// with an undercore ("_") will be ignored.
+func CompileAll() error {
+	for _, c := range Compilers {
+		if initer, ok := c.(Initer); ok {
+			// If the Compiler has an Init function, run it
+			initer.Init()
+		}
+		paths, err := FindPaths(config.SourceDir, c)
+		if err != nil {
+			return err
+		}
+		if err := c.CompileAll(paths, config.DestDir); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // filenameMatchWalkFunc creates and returns a filepath.WalkFunc which

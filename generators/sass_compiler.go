@@ -2,6 +2,7 @@ package generators
 
 import (
 	"fmt"
+	"github.com/albrow/scribble/config"
 	"github.com/wsxiaoys/terminal/color"
 	"os"
 	"os/exec"
@@ -25,13 +26,12 @@ func (s SassCompilerType) GetWalkFunc(paths *[]string) filepath.WalkFunc {
 
 func (s SassCompilerType) Compile(srcPath string, destDir string) error {
 	// parse path and figure out destPath
-	srcFilename := filepath.Base(srcPath)
-	destFilename := strings.Replace(srcFilename, ".scss", ".css", 1)
-	destPath := fmt.Sprintf("%s/%s", destDir, destFilename)
+	destPath := strings.Replace(srcPath, ".scss", ".css", 1)
+	destPath = strings.Replace(destPath, config.SourceDir, destDir, 1)
 	color.Printf("@g    CREATE: %s -> %s\n", srcPath, destPath)
 
 	// create the destDir if needed
-	if err := os.MkdirAll(destDir, os.ModePerm); err != nil {
+	if err := os.MkdirAll(filepath.Dir(destPath), os.ModePerm); err != nil {
 		// if the dir already exists, that's fine
 		// if there was some other error, return it
 		if !os.IsExist(err) {
@@ -49,6 +49,7 @@ func (s SassCompilerType) Compile(srcPath string, destDir string) error {
 }
 
 func (s SassCompilerType) CompileAll(srcPaths []string, destDir string) error {
+	fmt.Println("--> compiling sass")
 	for _, srcPath := range srcPaths {
 		if err := s.Compile(srcPath, destDir); err != nil {
 			return err

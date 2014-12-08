@@ -1,6 +1,7 @@
 package generators
 
 import (
+	"github.com/albrow/scribble/config"
 	"os"
 	"testing"
 )
@@ -20,11 +21,11 @@ func TestSassCompile(t *testing.T) {
 
 	// Create a few files.
 	tmpPaths := []string{
-		root + "sass/main.scss",
-		root + "sass/_colors.scss",
-		root + "sass/_body.scss",
-		root + "sass/notice.txt",
-		root + "sass/README",
+		root + "styles/main.scss",
+		root + "styles/_colors.scss",
+		root + "styles/_body.scss",
+		root + "styles/notice.txt",
+		root + "styles/README",
 		root + "_sass/main.scss",
 		root + ".sass/main.scss",
 		root + "more_sass/other_stuff/this.scss",
@@ -36,7 +37,7 @@ func TestSassCompile(t *testing.T) {
 	// Only some paths are expected to be matched by the SassCompiler,
 	// the other files should be ignored.
 	expectedPaths := []string{
-		root + "sass/main.scss",
+		root + "styles/main.scss",
 		root + "more_sass/other_stuff/this.scss",
 	}
 
@@ -47,19 +48,20 @@ func TestSassCompile(t *testing.T) {
 	gopath := os.Getenv("GOPATH")
 	srcRoot := gopath + "/src/github.com/albrow/scribble/test_files/sass/"
 	pathsToCopy := map[string]string{
-		root + "sass/main.scss":    srcRoot + "main.scss",
-		root + "sass/_colors.scss": srcRoot + "_colors.scss",
-		root + "sass/_body.scss":   srcRoot + "_body.scss",
+		root + "styles/main.scss":    srcRoot + "main.scss",
+		root + "styles/_colors.scss": srcRoot + "_colors.scss",
+		root + "styles/_body.scss":   srcRoot + "_body.scss",
 	}
 	if err := copyFiles(pathsToCopy); err != nil {
 		t.Fatal(err)
 	}
 
 	// Attempt to compile the sass files
-	if err := SassCompiler.Compile(root+"sass/main.scss", root+"public"); err != nil {
+	config.SourceDir = root[0 : len(root)-1]
+	if err := SassCompiler.Compile(root+"styles/main.scss", root+"public"); err != nil {
 		t.Fatal(err)
 	}
 
 	// Make sure the compiled result is correct
-	checkOutputMatchesFile(t, root+"public/main.css", srcRoot+"expected.css")
+	checkOutputMatchesFile(t, root+"public/styles/main.css", srcRoot+"expected.css")
 }

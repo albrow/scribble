@@ -11,3 +11,11 @@ func GetContext() Context {
 func Add(key string, val interface{}) {
 	context[key] = val
 }
+
+func CopyContext() Context {
+	contextCopy := Context{}
+	for k, v := range context {
+		contextCopy[k] = v
+	}
+	return contextCopy
+}

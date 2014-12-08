@@ -41,7 +41,9 @@ var (
 )
 
 func (p *PostsCompilerType) Init() {
-	p.pathMatch = config.PostsDir + "/*.md"
+	p.pathMatch = fmt.Sprintf("%s/%s/*.md", config.SourceDir, config.PostsDir)
+	// Add the posts function to FuncMap
+	context.FuncMap["Posts"] = Posts
 }
 
 func (p PostsCompilerType) GetWalkFunc(paths *[]string) filepath.WalkFunc {
@@ -57,29 +59,24 @@ func (p PostsCompilerType) Compile(srcPath string, destDir string) error {
 	color.Printf("@g    CREATE: %s -> %s\n", srcPath, destIndexFilePath)
 
 	// Create the index file
-	fmt.Println("creating file")
 	destFile, err := util.CreateFileWithPath(destIndexFilePath)
 	if err != nil {
 		return err
 	}
 
 	// Get and compile the template
-	fmt.Println("getting template")
 	tmpl := getPostTemplate()
-	fmt.Println("parsing post")
 	post.parse()
-	fmt.Println("getting context")
-	postContext := context.GetContext()
+	postContext := context.CopyContext()
 	postContext["Post"] = post
-	fmt.Println("Executing template")
 	if err := tmpl.Execute(destFile, postContext); err != nil {
 		return fmt.Errorf("ERROR compiling ace template for posts: %s", err.Error())
 	}
-	fmt.Println("Done")
 	return nil
 }
 
 func (p PostsCompilerType) CompileAll(srcPaths []string, destDir string) error {
+	fmt.Println("--> compiling posts")
 	for _, srcPath := range srcPaths {
 		if err := p.Compile(srcPath, destDir); err != nil {
 			return err
@@ -152,7 +149,9 @@ func (p *Post) parse() {
 // is to be used for rendering all posts.
 func getPostTemplate() *template.Template {
 	// TODO: detect layout from frontmatter
-	tpl, err := ace.Load("_layouts/base", config.ViewsDir+"/post", &ace.Options{
+	basePath := fmt.Sprintf("%s/base", config.LayoutsDir)
+	viewPath := fmt.Sprintf("%s/post", config.ViewsDir)
+	tpl, err := ace.Load(basePath, viewPath, &ace.Options{
 		DynamicReload: true,
 		BaseDir:       config.SourceDir,
 		FuncMap:       context.FuncMap,
