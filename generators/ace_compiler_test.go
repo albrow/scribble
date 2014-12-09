@@ -11,12 +11,12 @@ func TestAceCompile(t *testing.T) {
 	// test will live
 	root := "/tmp/ace_compiler/"
 	defer func() {
-		// // Remove everything after we're done
-		// if err := os.RemoveAll(root); err != nil {
-		// 	if !os.IsNotExist(err) {
-		// 		panic(err)
-		// 	}
-		// }
+		// Remove everything after we're done
+		if err := os.RemoveAll(root); err != nil {
+			if !os.IsNotExist(err) {
+				panic(err)
+			}
+		}
 	}()
 
 	// Create a few files.
