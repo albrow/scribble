@@ -4,7 +4,6 @@ import (
 	"github.com/albrow/scribble/config"
 	"github.com/albrow/scribble/util"
 	"github.com/howeyc/fsnotify"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -144,15 +143,7 @@ func delegatePaths() error {
 func copyUnmatchedPaths(paths []string) error {
 	for _, path := range paths {
 		destPath := strings.Replace(path, config.SourceDir, config.DestDir, 1)
-		destFile, err := util.CreateFileWithPath(destPath)
-		if err != nil {
-			return err
-		}
-		srcFile, err := os.Open(path)
-		if err != nil {
-			return err
-		}
-		if _, err := io.Copy(destFile, srcFile); err != nil {
+		if err := util.CopyFile(path, destPath); err != nil {
 			return err
 		}
 	}
