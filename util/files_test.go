@@ -1,28 +1,18 @@
 package util
 
 import (
-	"fmt"
 	"io/ioutil"
-	"math/rand"
 	"os"
 	"testing"
-	"time"
 )
 
-func TestCreateFile(t *testing.T) {
-	defer func() {
-		// recover from any potential panics and make the
-		// test fail if there were any
-		if err := recover(); err != nil {
-			t.Fatal(err)
-		}
-	}()
+func TestCreateFileWithPath(t *testing.T) {
+	root := "/tmp/test_create_file"
 	defer func() {
 		// cleanup by removing all the files we created
-		os.RemoveAll("/tmp/test")
+		os.RemoveAll(root)
 	}()
-	rand.Seed(time.Now().Unix())
-	path := fmt.Sprintf("/tmp/test/testFile%d.txt", rand.Int())
+	path := root + "/testFile.txt"
 	// Open a temp file and write to it
 	f, err := CreateFileWithPath(path)
 	if err != nil {
@@ -44,4 +34,41 @@ func TestCreateFile(t *testing.T) {
 	if string(gotData) != data {
 		t.Errorf("Read data was not correct. Expected %s but got %s.\n", data, string(gotData))
 	}
+}
+
+func TestRecursiveCopy(t *testing.T) {
+	t.Skip("TODO: Finish TestRecursiveCopy")
+	root := "/tmp/test_recursive_copy"
+	defer func() {
+		// cleanup by removing all the files we created
+		os.RemoveAll(root)
+	}()
+	srcDir := os.Getenv("GOPATH") + "src/github.com/albrow/scribble/test_files/sass/source"
+	if err := RecursiveCopy(srcDir, root); err != nil {
+		t.Fatal(err)
+	}
+	// TODO: check that the directories match
+}
+
+func TestCopyFile(t *testing.T) {
+	t.Skip("TODO: Finish TestCopyFile")
+	root := "/tmp/test_copy_files"
+	defer func() {
+		// cleanup by removing all the files we created
+		os.RemoveAll(root)
+	}()
+	// Create and write to a test file
+	srcPath := root + "/original/testFile.txt"
+	f, err := CreateFileWithPath(srcPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	f.WriteString("Hello, this is a test!\n")
+	// Copy the test file
+	destPath := root + "/copy/testFile.txt"
+	if err := CopyFile(srcPath, destPath); err != nil {
+		t.Fatal(err)
+	}
+	// TODO: Check that the two files match
 }

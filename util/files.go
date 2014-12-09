@@ -1,8 +1,10 @@
 package util
 
 import (
+	"io"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // CreateFileWithPath creates a file by first creating the directory
@@ -29,4 +31,38 @@ func CreateFileWithPath(path string) (*os.File, error) {
 		return nil, err
 	}
 	return file, nil
+}
+
+// RecursiveCopy copies everything from srcDir to destDir recursively.
+// It is analogous to cp -R in unix systems.
+func RecursiveCopy(srcDir string, destDir string) error {
+	return filepath.Walk(srcDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() {
+			destPath := strings.Replace(path, srcDir, destDir, 1)
+			if err := CopyFile(path, destPath); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
+// CopyFile copies the file at srcePath to destPath. It creates any
+// directories needed for destPath.
+func CopyFile(srcPath string, destPath string) error {
+	destFile, err := CreateFileWithPath(destPath)
+	if err != nil {
+		return err
+	}
+	srcFile, err := os.Open(srcPath)
+	if err != nil {
+		return err
+	}
+	if _, err := io.Copy(destFile, srcFile); err != nil {
+		return err
+	}
+	return nil
 }
