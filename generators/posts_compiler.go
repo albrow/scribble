@@ -46,8 +46,8 @@ func (p *PostsCompilerType) Init() {
 	context.FuncMap["Posts"] = Posts
 }
 
-func (p PostsCompilerType) GetWalkFunc(paths *[]string) filepath.WalkFunc {
-	return pathMatchWalkFunc(paths, p.pathMatch, true, false)
+func (p PostsCompilerType) GetMatchFunc() MatchFunc {
+	return pathMatchFunc(p.pathMatch, true, false)
 }
 
 func (p PostsCompilerType) Compile(srcPath string, destDir string) error {

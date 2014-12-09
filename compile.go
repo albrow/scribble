@@ -12,6 +12,7 @@ import (
 func compile(watch bool) {
 	config.Parse()
 	fmt.Println("--> compiling")
+	createDestDir()
 	removeAllOld()
 	if err := generators.CompileAll(); err != nil {
 		util.ChimeError(err)
@@ -19,6 +20,16 @@ func compile(watch bool) {
 	// if watch {
 	// 	watchAll()
 	// }
+}
+
+func createDestDir() {
+	if err := os.MkdirAll(config.DestDir, os.ModePerm); err != nil {
+		if !os.IsExist(err) {
+			// If the directory already existed, that's fine,
+			// otherwise panic.
+			panic(err)
+		}
+	}
 }
 
 func removeAllOld() {

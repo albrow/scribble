@@ -10,22 +10,15 @@ import (
 	"github.com/albrow/scribble/util"
 	"github.com/wsxiaoys/terminal/color"
 	"os"
-	"path/filepath"
 	"strings"
 )
 
-type AceCompilerType struct {
-	filenameMatch string
-}
+type AceCompilerType struct{}
 
-const aceFilenameMatch = "*.ace"
+var AceCompiler = AceCompilerType{}
 
-var AceCompiler = AceCompilerType{
-	filenameMatch: aceFilenameMatch,
-}
-
-func (a AceCompilerType) GetWalkFunc(paths *[]string) filepath.WalkFunc {
-	return filenameMatchWalkFunc(paths, a.filenameMatch, true, true)
+func (a AceCompilerType) GetMatchFunc() MatchFunc {
+	return filenameMatchFunc("*.ace", true, true)
 }
 
 func (a AceCompilerType) Compile(srcPath string, destDir string) error {

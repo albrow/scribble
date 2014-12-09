@@ -2,56 +2,79 @@ package generators
 
 import (
 	"github.com/albrow/scribble/config"
+	"github.com/albrow/scribble/util"
 	"github.com/howeyc/fsnotify"
+	"io"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
+// Compilers is a slice of all known Compilers.
+// NOTE: it is important that PostsCompiler is the first
+// item in the slice, because some other compilers rely on
+// the existence of a list of parsed Post objects. For example,
+// AceCompiler relies on the Posts function returning the correct
+// results inside of ace templates.
 var Compilers = []Compiler{&PostsCompiler, &SassCompiler, &AceCompiler}
+
+// CompilerPaths is a map of Compiler to the matched paths for that Compiler
+var CompilerPaths = map[Compiler][]string{}
+
+// UnmatchedPaths is a slice of paths which do not match any compiler
+var UnmatchedPaths = []string{}
+
+// MatchFunc represents a function which should return true iff
+// path matches some pattern. Compilers and Watchers return a MatchFunc
+// to specify which paths they are concerned with.
+type MatchFunc func(path string) (bool, error)
 
 type Initer interface {
 	// Init allows a Compiler or Watcher to do any necessary
 	// setup before other methods are called. (e.g. set the
-	// result of PathMatch based on some config variable).
+	// result of PathMatch based on some config variable). The
+	// Init method is not required, but it will be called if
+	// it exists.
 	Init()
 }
 
-type Walker interface {
-	// GetWalker returns a filepath.WalkFunc. The function returned
-	// is responsible for adding any paths which the compiler/watcher
-	// cares about to paths. The WalkFunc will be executed starting
-	// at the source directory (lib.SrcDir) which is user-configurable.
-	GetWalkFunc(paths *[]string) filepath.WalkFunc
+type PathMatcher interface {
+	// GetMatchFunc returns a MatchFunc, which in this context
+	// will be used by a Compiler or Watcher to specify which paths
+	// it is concerned with.
+	GetMatchFunc() MatchFunc
 }
 
 type Compiler interface {
-	Walker
+	PathMatcher
 	// Compile compiles a source file to an destination directory.
 	// srcPath will be some path that matches according to the
-	// Walker. destDir will be the root destination directory.
+	// MatchFunc for the Compiler. destDir will be the root
+	// destination directory.
 	Compile(srcPath string, destDir string) error
 	// CompileAll compiles all the files found in each path.
 	// srcPaths will be all paths that match according to
-	// the Walker. destDir will be the root destination directory.
+	// the PathMatcher. destDir will be the root destination directory.
 	CompileAll(srcPaths []string, destDir string) error
 }
 
 type Watcher interface {
-	Walker
+	PathMatcher
 	// PathChanged is triggered whenever a relevant file is changed
 	// Typically, the Watcher should recompile certain files and put
 	// them in the appropriate place in dest. srcPath will be some
-	// path that matches according to the PathMatcher. destDir will be
-	// the root destination directory.
+	// path that matches according to the MatchFunc for the Watcher.
+	// destDir will be the root destination directory.
 	PathChanged(srcPath string, ev fsnotify.FileEvent, destDir string) error
 }
 
 // FindPaths iterates recursively through some root directory and
-// returns all the matched paths for w.
-func FindPaths(root string, w Walker) ([]string, error) {
+// returns all the matched paths for m.
+func FindPaths(root string, m PathMatcher) ([]string, error) {
 	paths := []string{}
-	walkerFunc := w.GetWalkFunc(&paths)
-	if err := filepath.Walk(root, walkerFunc); err != nil {
+	matchFunc := m.GetMatchFunc()
+	walkFunc := matchWalkFunc(&paths, matchFunc)
+	if err := filepath.Walk(root, walkFunc); err != nil {
 		return nil, err
 	}
 	return paths, nil
@@ -62,68 +85,160 @@ func FindPaths(root string, w Walker) ([]string, error) {
 // it will be copied to DestDir directly. Any files or directories that start
 // with an undercore ("_") will be ignored.
 func CompileAll() error {
+	initCompilers()
+	if err := delegatePaths(); err != nil {
+		return err
+	}
+	for _, c := range Compilers {
+		paths, found := CompilerPaths[c]
+		if found && len(paths) > 0 {
+			if err := c.CompileAll(paths, config.DestDir); err != nil {
+				return err
+			}
+		}
+	}
+	if err := copyUnmatchedPaths(UnmatchedPaths); err != nil {
+		return err
+	}
+	return nil
+}
+
+// initCompilers calls the Init method for each compiler that has it
+func initCompilers() {
 	for _, c := range Compilers {
 		if initer, ok := c.(Initer); ok {
 			// If the Compiler has an Init function, run it
 			initer.Init()
 		}
-		paths, err := FindPaths(config.SourceDir, c)
+		CompilerPaths[c] = []string{}
+	}
+}
+
+// delegatePaths walks through the source directory, checks if a path matches according
+// to the MatchFunc for each compiler, and adds the path to CompilerPaths if it does
+// match.
+func delegatePaths() error {
+	return filepath.Walk(config.SourceDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
-		if err := c.CompileAll(paths, config.DestDir); err != nil {
+		matched := false
+		for _, c := range Compilers {
+			if match, err := c.GetMatchFunc()(path); err != nil {
+				return err
+			} else if match {
+				matched = true
+				CompilerPaths[c] = append(CompilerPaths[c], path)
+			}
+		}
+		if !matched && !info.IsDir() {
+			// If the path didn't match any compilers according to their MatchFuncs,
+			// add it to the list of unmatched paths. These will be copied from SrcDir
+			// to DestDir without being changed.
+			UnmatchedPaths = append(UnmatchedPaths, path)
+		}
+		return nil
+	})
+}
+
+// copyUnmatchedPaths copies paths from SrcDir to DestDir without changing them. It perserves
+// directory structures, so e.g., source/archive/index.html becomes public/archive/index.html.
+func copyUnmatchedPaths(paths []string) error {
+	for _, path := range paths {
+		destPath := strings.Replace(path, config.SourceDir, config.DestDir, 1)
+		destFile, err := util.CreateFileWithPath(destPath)
+		if err != nil {
+			return err
+		}
+		srcFile, err := os.Open(path)
+		if err != nil {
+			return err
+		}
+		if _, err := io.Copy(destFile, srcFile); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-// filenameMatchWalkFunc creates and returns a filepath.WalkFunc which
-// will check for exact filename matches with pattern, according to the filepath.Match
-// syntax, and append all the paths that match to paths. You can add options
-// to ignore hidden files and directories (which start with a '.') or files
-// which should typically be ignored by scribble (which start with a '_').
-func filenameMatchWalkFunc(paths *[]string, pattern string, ignoreHidden bool, ignoreUnderscore bool) filepath.WalkFunc {
-	return matchWalkFunc(paths, pattern, ignoreHidden, ignoreUnderscore, func(pattern, path string) (bool, error) {
+// filenameMatchFunc creates and returns a MatchFunc which
+// will check for exact matches between the filename for some path (i.e. filepath.Base(path))
+// and pattern, according to the filepath.Match semantics. You can add options to ignore hidden
+// files and directories (which start with a '.') or files which should typically be ignored by
+// scribble (which start with a '_').
+// BUG: Filename matching is not expected to work on windows.
+func filenameMatchFunc(pattern string, ignoreHidden bool, ignoreUnderscore bool) MatchFunc {
+	return func(path string) (bool, error) {
+		if ignoreHidden {
+			// Check for hidden files and directories, i.e. those
+			// that begin with a '.'. If we find the substring "/."
+			// it must mean that some file or directory in the path
+			// is hidden.
+			// TODO: Make this compatible with windows.
+			if strings.Contains(path, "/.") {
+				return false, nil
+			}
+		}
+		if ignoreUnderscore {
+			// Check for files and directories that begin with a '_',
+			// which have special meaning in scribble and should typically
+			// be ignored. If we find the substring "/_" it must mean that some
+			// file or directory in the path starts with an underscore.
+			// TODO: Make this compatible with windows.
+			if strings.Contains(path, "/_") {
+				return false, nil
+			}
+		}
 		return filepath.Match(pattern, filepath.Base(path))
-	})
+	}
 }
 
-// pathMatchWalkFunc creates and returns a filepath.WalkFunc which
-// will check for full path matches with pattern, according to the filepath.Match
-// syntax, and append all the paths that match to paths. You can add options
-// to ignore hidden files and directories (which start with a '.') or files
-// which should typically be ignored by scribble (which start with a '_').
-func pathMatchWalkFunc(paths *[]string, pattern string, ignoreHidden bool, ignoreUnderscore bool) filepath.WalkFunc {
-	return matchWalkFunc(paths, pattern, ignoreHidden, ignoreUnderscore, filepath.Match)
+// pathMatchFunc creates and returns a MatchFunc which
+// will check for exact matches between some full path and pattern, according to the
+// filepath.Match semantics. You can add options to ignore hidden files and directories
+// (which start with a '.') or files which should typically be ignored by scribble (which
+// start with a '_').
+// BUG: Path matching is not expected to work on windows.
+func pathMatchFunc(pattern string, ignoreHidden bool, ignoreUnderscore bool) MatchFunc {
+	return func(path string) (bool, error) {
+		if ignoreHidden {
+			// Check for hidden files and directories, i.e. those
+			// that begin with a '.'. If we find the substring "/."
+			// it must mean that some file or directory in the path
+			// is hidden.
+			// TODO: Make this compatible with windows.
+			if strings.Contains(path, "/.") {
+				return false, nil
+			}
+		}
+		if ignoreUnderscore {
+			// Check for files and directories that begin with a '_',
+			// which have special meaning in scribble and should typically
+			// be ignored. If we find the substring "/_" it must mean that some
+			// file or directory in the path starts with an underscore.
+			// TODO: Make this compatible with windows.
+			if strings.Contains(path, "/_") {
+				return false, nil
+			}
+		}
+		return filepath.Match(pattern, path)
+	}
 }
 
 // matchWalkFunc creates and returns a filepath.WalkFunc which
 // will check if a file path matches using matchFunc (i.e. when matchFunc returns true),
-// and append all the paths that match to paths. You can add options to ignore hidden
-// files and directories (which start with a '.') or files which should typically be
-// ignored by scribble (which start with a '_').
-func matchWalkFunc(paths *[]string, pattern string, ignoreHidden bool, ignoreUnderscore bool, matchFunc func(pattern, path string) (bool, error)) filepath.WalkFunc {
+// and append all the paths that match to paths. Typically, this should only be used when
+// you want to get the paths for a specific Compiler/Watcher and not for any of the others,
+// e.g. for testing.
+func matchWalkFunc(paths *[]string, matchFunc func(path string) (bool, error)) filepath.WalkFunc {
 	return func(path string, info os.FileInfo, err error) error {
-		firstChar := filepath.Base(path)[0]
-		if ignoreHidden && firstChar == '.' {
-			if info.IsDir() {
-				return filepath.SkipDir
-			} else {
-				return nil
-			}
-		} else if ignoreUnderscore && firstChar == '_' {
-			if info.IsDir() {
-				return filepath.SkipDir
-			} else {
-				return nil
-			}
-		}
-		if matched, err := matchFunc(pattern, path); err != nil {
+		if matched, err := matchFunc(path); err != nil {
 			return err
 		} else if matched {
 			// fmt.Printf("%s matches %s\n", path, pattern)
-			(*paths) = append(*paths, path)
+			if paths != nil {
+				(*paths) = append(*paths, path)
+			}
 		} else {
 			// fmt.Printf("%s does not match %s\n", path, pattern)
 		}
