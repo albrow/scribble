@@ -21,10 +21,10 @@ func (a AceCompilerType) GetMatchFunc() MatchFunc {
 	return filenameMatchFunc("*.ace", true, true)
 }
 
-func (a AceCompilerType) Compile(srcPath string, destDir string) error {
+func (a AceCompilerType) Compile(srcPath string) error {
 	// parse path and figure out destPath
 	destPath := strings.Replace(srcPath, ".ace", ".html", 1)
-	destPath = strings.Replace(destPath, config.SourceDir, destDir, 1)
+	destPath = strings.Replace(destPath, config.SourceDir, config.DestDir, 1)
 	color.Printf("@g    CREATE: %s -> %s\n", srcPath, destPath)
 
 	// Open the source file
@@ -71,10 +71,10 @@ func (a AceCompilerType) Compile(srcPath string, destDir string) error {
 	return nil
 }
 
-func (a AceCompilerType) CompileAll(srcPaths []string, destDir string) error {
+func (a AceCompilerType) CompileAll(srcPaths []string) error {
 	fmt.Println("--> compiling ace")
 	for _, srcPath := range srcPaths {
-		if err := a.Compile(srcPath, destDir); err != nil {
+		if err := a.Compile(srcPath); err != nil {
 			return err
 		}
 	}

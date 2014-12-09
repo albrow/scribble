@@ -18,13 +18,13 @@ func (s SassCompilerType) GetMatchFunc() MatchFunc {
 	return filenameMatchFunc("*.scss", true, true)
 }
 
-func (s SassCompilerType) Compile(srcPath string, destDir string) error {
+func (s SassCompilerType) Compile(srcPath string) error {
 	// parse path and figure out destPath
 	destPath := strings.Replace(srcPath, ".scss", ".css", 1)
-	destPath = strings.Replace(destPath, config.SourceDir, destDir, 1)
+	destPath = strings.Replace(destPath, config.SourceDir, config.DestDir, 1)
 	color.Printf("@g    CREATE: %s -> %s\n", srcPath, destPath)
 
-	// create the destDir if needed
+	// create the dest directory if needed
 	if err := os.MkdirAll(filepath.Dir(destPath), os.ModePerm); err != nil {
 		// if the dir already exists, that's fine
 		// if there was some other error, return it
@@ -42,10 +42,10 @@ func (s SassCompilerType) Compile(srcPath string, destDir string) error {
 	return nil
 }
 
-func (s SassCompilerType) CompileAll(srcPaths []string, destDir string) error {
+func (s SassCompilerType) CompileAll(srcPaths []string) error {
 	fmt.Println("--> compiling sass")
 	for _, srcPath := range srcPaths {
-		if err := s.Compile(srcPath, destDir); err != nil {
+		if err := s.Compile(srcPath); err != nil {
 			return err
 		}
 	}

@@ -58,7 +58,8 @@ func TestSassCompile(t *testing.T) {
 
 	// Attempt to compile the sass files
 	config.SourceDir = root[0 : len(root)-1]
-	if err := SassCompiler.Compile(root+"styles/main.scss", root+"public"); err != nil {
+	config.DestDir = root + "public"
+	if err := SassCompiler.Compile(root + "styles/main.scss"); err != nil {
 		t.Fatal(err)
 	}
 

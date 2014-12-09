@@ -57,7 +57,8 @@ func TestPostsCompile(t *testing.T) {
 	// Attempt to compile the posts
 	config.LayoutsDir = "_layouts"
 	config.ViewsDir = "_views"
-	if err := PostsCompiler.Compile(root+"_posts/post.md", root+"public"); err != nil {
+	config.DestDir = root + "public"
+	if err := PostsCompiler.Compile(root + "_posts/post.md"); err != nil {
 		t.Fatal(err)
 	}
 

@@ -47,25 +47,23 @@ type PathMatcher interface {
 
 type Compiler interface {
 	PathMatcher
-	// Compile compiles a source file to an destination directory.
+	// Compile compiles a source file identified by srcPath.
 	// srcPath will be some path that matches according to the
-	// MatchFunc for the Compiler. destDir will be the root
-	// destination directory.
-	Compile(srcPath string, destDir string) error
+	// MatchFunc for the Compiler.
+	Compile(srcPath string) error
 	// CompileAll compiles all the files found in each path.
 	// srcPaths will be all paths that match according to
-	// the PathMatcher. destDir will be the root destination directory.
-	CompileAll(srcPaths []string, destDir string) error
+	// the MatchFunc for the Compiler.
+	CompileAll(srcPaths []string) error
 }
 
 type Watcher interface {
 	PathMatcher
 	// PathChanged is triggered whenever a relevant file is changed
-	// Typically, the Watcher should recompile certain files and put
-	// them in the appropriate place in dest. srcPath will be some
-	// path that matches according to the MatchFunc for the Watcher.
-	// destDir will be the root destination directory.
-	PathChanged(srcPath string, ev fsnotify.FileEvent, destDir string) error
+	// Typically, the Watcher should recompile certain files.
+	// srcPath will be some path that matches according to the MatchFunc
+	// for the Watcher. ev is the FileEvent associated with the change.
+	PathChanged(srcPath string, ev fsnotify.FileEvent) error
 }
 
 // FindPaths iterates recursively through some root directory and
@@ -92,7 +90,7 @@ func CompileAll() error {
 	for _, c := range Compilers {
 		paths, found := CompilerPaths[c]
 		if found && len(paths) > 0 {
-			if err := c.CompileAll(paths, config.DestDir); err != nil {
+			if err := c.CompileAll(paths); err != nil {
 				return err
 			}
 		}

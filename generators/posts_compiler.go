@@ -50,11 +50,11 @@ func (p PostsCompilerType) GetMatchFunc() MatchFunc {
 	return pathMatchFunc(p.pathMatch, true, false)
 }
 
-func (p PostsCompilerType) Compile(srcPath string, destDir string) error {
+func (p PostsCompilerType) Compile(srcPath string) error {
 	// Get the parsed post object and determine dest path
 	post := getOrCreatePostFromPath(srcPath)
 	srcFilename := filepath.Base(srcPath)
-	destPath := fmt.Sprintf("%s/%s", destDir, strings.TrimSuffix(srcFilename, ".md"))
+	destPath := fmt.Sprintf("%s/%s", config.DestDir, strings.TrimSuffix(srcFilename, ".md"))
 	destIndexFilePath := destPath + "/index.html"
 	color.Printf("@g    CREATE: %s -> %s\n", srcPath, destIndexFilePath)
 
@@ -75,10 +75,10 @@ func (p PostsCompilerType) Compile(srcPath string, destDir string) error {
 	return nil
 }
 
-func (p PostsCompilerType) CompileAll(srcPaths []string, destDir string) error {
+func (p PostsCompilerType) CompileAll(srcPaths []string) error {
 	fmt.Println("--> compiling posts")
 	for _, srcPath := range srcPaths {
-		if err := p.Compile(srcPath, destDir); err != nil {
+		if err := p.Compile(srcPath); err != nil {
 			return err
 		}
 	}

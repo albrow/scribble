@@ -58,7 +58,8 @@ func TestAceCompile(t *testing.T) {
 	// Attempt to compile the ace files
 	config.LayoutsDir = "_layouts"
 	config.SourceDir = root[0 : len(root)-1]
-	if err := AceCompiler.Compile(root+"index.ace", root+"public"); err != nil {
+	config.DestDir = root + "public"
+	if err := AceCompiler.Compile(root + "index.ace"); err != nil {
 		t.Fatal(err)
 	}
 
