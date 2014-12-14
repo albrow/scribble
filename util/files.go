@@ -33,23 +33,6 @@ func CreateFileWithPath(path string) (*os.File, error) {
 	return file, nil
 }
 
-// RecursiveCopy copies everything from srcDir to destDir recursively.
-// It is analogous to cp -R in unix systems.
-func RecursiveCopy(srcDir string, destDir string) error {
-	return filepath.Walk(srcDir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if !info.IsDir() {
-			destPath := strings.Replace(path, srcDir, destDir, 1)
-			if err := CopyFile(path, destPath); err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-}
-
 // CopyFile copies the file at srcePath to destPath. It creates any
 // directories needed for destPath.
 func CopyFile(srcPath string, destPath string) error {
@@ -65,6 +48,23 @@ func CopyFile(srcPath string, destPath string) error {
 		return err
 	}
 	return nil
+}
+
+// RecursiveCopy copies everything from srcDir to destDir recursively.
+// It is analogous to cp -R in unix systems.
+func RecursiveCopy(srcDir string, destDir string) error {
+	return filepath.Walk(srcDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() {
+			destPath := strings.Replace(path, srcDir, destDir, 1)
+			if err := CopyFile(path, destPath); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 }
 
 // CreateEmptyFiles creates new, empty files for every path in paths. It

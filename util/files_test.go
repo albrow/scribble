@@ -1,6 +1,7 @@
 package util
 
 import (
+	"github.com/albrow/scribble/test_util"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -36,20 +37,6 @@ func TestCreateFileWithPath(t *testing.T) {
 	}
 }
 
-func TestRecursiveCopy(t *testing.T) {
-	t.Skip("TODO: Finish TestRecursiveCopy")
-	root := "/tmp/test_recursive_copy"
-	defer func() {
-		// cleanup by removing all the files we created
-		os.RemoveAll(root)
-	}()
-	srcDir := os.Getenv("GOPATH") + "src/github.com/albrow/scribble/test_files/sass/source"
-	if err := RecursiveCopy(srcDir, root); err != nil {
-		t.Fatal(err)
-	}
-	// TODO: check that the directories match
-}
-
 func TestCopyFile(t *testing.T) {
 	t.Skip("TODO: Finish TestCopyFile")
 	root := "/tmp/test_copy_files"
@@ -70,5 +57,19 @@ func TestCopyFile(t *testing.T) {
 	if err := CopyFile(srcPath, destPath); err != nil {
 		t.Fatal(err)
 	}
-	// TODO: Check that the two files match
+	test_util.CheckFilesMatch(t, srcPath, destPath)
+}
+
+func TestRecursiveCopy(t *testing.T) {
+	t.Skip("TODO: Finish TestRecursiveCopy")
+	destDir := "/tmp/test_recursive_copy"
+	defer func() {
+		// cleanup by removing all the files we created
+		os.RemoveAll(destDir)
+	}()
+	srcDir := os.Getenv("GOPATH") + "src/github.com/albrow/scribble/test_files/sass/source"
+	if err := RecursiveCopy(srcDir, destDir); err != nil {
+		t.Fatal(err)
+	}
+	test_util.CheckDirsMatch(t, srcDir, destDir)
 }

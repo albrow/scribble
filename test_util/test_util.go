@@ -3,7 +3,9 @@ package test_util
 import (
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -39,5 +41,28 @@ func CheckFilesMatch(t *testing.T, expectedPath string, gotPath string) {
 		t.Errorf("File at %s was empty.", gotPath)
 	} else if !reflect.DeepEqual(expected, got) {
 		t.Errorf("Contents of file at %s were incorrect.\nExpected: %s\nGot: %s\n", gotPath, string(expected), string(got))
+	}
+}
+
+// CheckDirsMatch recursively iterates through expectedDir and checks that the directory
+// structure and the contents of each file match gotDir exactly. If anything does not
+// match, it adds an error to t.
+func CheckDirsMatch(t *testing.T, expectedDir string, gotDir string) {
+	if err := filepath.Walk(expectedDir, func(expectedPath string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() && !(expectedPath == expectedDir) {
+			// We expect the directory structure to be the same, so every subdirectory
+			// following expectedDir should also be present in gotDir. i.e. if expectedDir is
+			// /tmp/source, gotDir is /tmp/public, and expectedPath is
+			// /tmp/source/one/two/three.txt, we would expect the corresponding gotPath to
+			// be /tmp/public/one/two/three.txt.
+			gotPath := strings.Replace(expectedPath, expectedDir, gotDir, 1)
+			CheckFilesMatch(t, expectedPath, gotPath)
+		}
+		return nil
+	}); err != nil {
+		panic(err)
 	}
 }
