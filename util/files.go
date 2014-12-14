@@ -66,3 +66,17 @@ func CopyFile(srcPath string, destPath string) error {
 	}
 	return nil
 }
+
+// CreateEmptyFiles creates new, empty files for every path in paths. It
+// does not write to them, and any old content that may have been there is
+// erased.
+func CreateEmptyFiles(paths []string) error {
+	for _, path := range paths {
+		if f, err := CreateFileWithPath(path); err != nil {
+			return err
+		} else {
+			f.Close()
+		}
+	}
+	return nil
+}

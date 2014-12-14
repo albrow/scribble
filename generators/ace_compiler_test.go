@@ -2,6 +2,7 @@ package generators
 
 import (
 	"github.com/albrow/scribble/config"
+	"github.com/albrow/scribble/test_util"
 	"github.com/albrow/scribble/util"
 	"os"
 	"testing"
@@ -30,7 +31,7 @@ func TestAcePathMatch(t *testing.T) {
 		root + "/.templates/base.ace",
 		root + "/more/other_stuff/this.ace",
 	}
-	if err := createEmptyFiles(tmpPaths); err != nil {
+	if err := util.CreateEmptyFiles(tmpPaths); err != nil {
 		t.Fatal(err)
 	}
 
@@ -41,8 +42,15 @@ func TestAcePathMatch(t *testing.T) {
 		root + "/more/other_stuff/this.ace",
 	}
 
+	// Use the MatchFunc to find all the paths
+	config.SourceDir = root
+	gotPaths, err := FindPaths(AceCompiler)
+	if err != nil {
+		t.Error(err)
+	}
+
 	// Check that the paths we get are correct
-	checkPathsMatch(t, AceCompiler, root, expectedPaths)
+	test_util.CheckStringsMatch(t, expectedPaths, gotPaths)
 }
 
 func TestAceCompile(t *testing.T) {
@@ -76,5 +84,5 @@ func TestAceCompile(t *testing.T) {
 
 	// Make sure the compiled result is correct
 	expectedDir := testFilesDir + "/public"
-	checkOutputMatchesFile(t, destDir+"/index.html", expectedDir+"/index.html")
+	test_util.CheckFilesMatch(t, expectedDir+"/index.html", destDir+"/index.html")
 }

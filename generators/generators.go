@@ -65,21 +65,21 @@ type Watcher interface {
 	PathChanged(srcPath string, ev fsnotify.FileEvent) error
 }
 
-// FindPaths iterates recursively through some root directory and
+// FindPaths iterates recursively through config.SourceDir and
 // returns all the matched paths for m.
-func FindPaths(root string, m PathMatcher) ([]string, error) {
+func FindPaths(m PathMatcher) ([]string, error) {
 	paths := []string{}
 	matchFunc := m.GetMatchFunc()
 	walkFunc := matchWalkFunc(&paths, matchFunc)
-	if err := filepath.Walk(root, walkFunc); err != nil {
+	if err := filepath.Walk(config.SourceDir, walkFunc); err != nil {
 		return nil, err
 	}
 	return paths, nil
 }
 
-// CompileAll compiles all files in SrcDir by delegating each path to
-// it's corresponding Compiler. If a path in SrcDir does not match any Compiler,
-// it will be copied to DestDir directly. Any files or directories that start
+// CompileAll compiles all files in config.SourceDir by delegating each path to
+// it's corresponding Compiler. If a path in config.SourceDir does not match any Compiler,
+// it will be copied to config.DestDir directly. Any files or directories that start
 // with an undercore ("_") will be ignored.
 func CompileAll() error {
 	initCompilers()
@@ -130,15 +130,15 @@ func delegatePaths() error {
 		}
 		if !matched && !info.IsDir() {
 			// If the path didn't match any compilers according to their MatchFuncs,
-			// add it to the list of unmatched paths. These will be copied from SrcDir
-			// to DestDir without being changed.
+			// add it to the list of unmatched paths. These will be copied from config.SourceDir
+			// to config.DestDir without being changed.
 			UnmatchedPaths = append(UnmatchedPaths, path)
 		}
 		return nil
 	})
 }
 
-// copyUnmatchedPaths copies paths from SrcDir to DestDir without changing them. It perserves
+// copyUnmatchedPaths copies paths from config.SourceDir to config.DestDir without changing them. It perserves
 // directory structures, so e.g., source/archive/index.html becomes public/archive/index.html.
 func copyUnmatchedPaths(paths []string) error {
 	for _, path := range paths {

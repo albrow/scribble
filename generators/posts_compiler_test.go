@@ -2,6 +2,7 @@ package generators
 
 import (
 	"github.com/albrow/scribble/config"
+	"github.com/albrow/scribble/test_util"
 	"github.com/albrow/scribble/util"
 	"os"
 	"testing"
@@ -27,7 +28,7 @@ func TestPostsPathMatch(t *testing.T) {
 		root + "/_posts/README",
 		root + "/other_dir/post.md",
 	}
-	if err := createEmptyFiles(tmpPaths); err != nil {
+	if err := util.CreateEmptyFiles(tmpPaths); err != nil {
 		t.Fatal(err)
 	}
 
@@ -40,8 +41,15 @@ func TestPostsPathMatch(t *testing.T) {
 		root + "/_posts/post.md",
 	}
 
+	// Use the MatchFunc to find all the paths
+	config.SourceDir = root
+	gotPaths, err := FindPaths(PostsCompiler)
+	if err != nil {
+		t.Error(err)
+	}
+
 	// Check that the paths we get are correct
-	checkPathsMatch(t, PostsCompiler, root, expectedPaths)
+	test_util.CheckStringsMatch(t, expectedPaths, gotPaths)
 }
 
 func testPostsCompiler(t *testing.T) {
@@ -77,5 +85,5 @@ func testPostsCompiler(t *testing.T) {
 
 	// Make sure the compiled result is correct
 	expectedDir := testFilesDir + "/public"
-	checkOutputMatchesFile(t, destDir+"/post/index.html", expectedDir+"/post/index.html")
+	test_util.CheckFilesMatch(t, expectedDir+"/post/index.html", destDir+"/post/index.html")
 }

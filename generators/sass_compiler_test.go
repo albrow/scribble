@@ -2,6 +2,7 @@ package generators
 
 import (
 	"github.com/albrow/scribble/config"
+	"github.com/albrow/scribble/test_util"
 	"github.com/albrow/scribble/util"
 	"os"
 	"testing"
@@ -31,7 +32,7 @@ func TestSassPathMatch(t *testing.T) {
 		root + "/.sass/main.scss",
 		root + "/more_sass/other_stuff/this.scss",
 	}
-	if err := createEmptyFiles(tmpPaths); err != nil {
+	if err := util.CreateEmptyFiles(tmpPaths); err != nil {
 		t.Fatal(err)
 	}
 
@@ -42,8 +43,15 @@ func TestSassPathMatch(t *testing.T) {
 		root + "/more_sass/other_stuff/this.scss",
 	}
 
+	// Use the MatchFunc to find all the paths
+	config.SourceDir = root
+	gotPaths, err := FindPaths(SassCompiler)
+	if err != nil {
+		t.Error(err)
+	}
+
 	// Check that the paths we get are correct
-	checkPathsMatch(t, SassCompiler, root, expectedPaths)
+	test_util.CheckStringsMatch(t, expectedPaths, gotPaths)
 }
 
 func TestSassCompile(t *testing.T) {
@@ -76,5 +84,5 @@ func TestSassCompile(t *testing.T) {
 
 	// Make sure the compiled result is correct
 	expectedDir := testFilesDir + "/public"
-	checkOutputMatchesFile(t, destDir+"/styles/main.css", expectedDir+"/styles/main.css")
+	test_util.CheckFilesMatch(t, expectedDir+"/styles/main.css", destDir+"/styles/main.css")
 }
