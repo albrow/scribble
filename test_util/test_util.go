@@ -13,11 +13,11 @@ import (
 // not match exactly the elements in expected (irrespective of order).
 func CheckStringsMatch(t *testing.T, expected []string, got []string) {
 	gotMap, expectedMap := map[string]struct{}{}, map[string]struct{}{}
-	for _, path := range got {
-		gotMap[path] = struct{}{}
+	for _, s := range got {
+		gotMap[s] = struct{}{}
 	}
-	for _, path := range expected {
-		expectedMap[path] = struct{}{}
+	for _, s := range expected {
+		expectedMap[s] = struct{}{}
 	}
 	if !reflect.DeepEqual(gotMap, expectedMap) {
 		t.Errorf("Paths were not correct.\nExpected: %v\nGot: %v\n", expected, got)
