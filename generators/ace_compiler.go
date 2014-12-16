@@ -8,6 +8,7 @@ import (
 	"github.com/albrow/scribble/config"
 	"github.com/albrow/scribble/context"
 	"github.com/albrow/scribble/util"
+	"github.com/howeyc/fsnotify"
 	"github.com/wsxiaoys/terminal/color"
 	"os"
 	"strings"
@@ -94,4 +95,8 @@ func (a AceCompilerType) CompileAll(srcPaths []string) error {
 		}
 	}
 	return nil
+}
+
+func (a AceCompilerType) FileChanged(srcPath string, ev fsnotify.FileEvent) error {
+	return fmt.Errorf("FileChanged not yet implemented!")
 }

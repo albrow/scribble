@@ -8,6 +8,7 @@ import (
 	"github.com/albrow/scribble/config"
 	"github.com/albrow/scribble/context"
 	"github.com/albrow/scribble/util"
+	"github.com/howeyc/fsnotify"
 	"github.com/russross/blackfriday"
 	"github.com/wsxiaoys/terminal/color"
 	"html/template"
@@ -111,6 +112,10 @@ func (p PostsCompilerType) CompileAll(srcPaths []string) error {
 		}
 	}
 	return nil
+}
+
+func (p PostsCompilerType) FileChanged(srcPath string, ev fsnotify.FileEvent) error {
+	return fmt.Errorf("FileChanged not yet implemented!")
 }
 
 // Posts returns up to limit posts. If limit is 0, it returns

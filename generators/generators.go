@@ -51,6 +51,7 @@ type PathMatcher interface {
 // Compiler is capable of compiling a certain type of file.
 type Compiler interface {
 	PathMatcher
+	Watcher
 	// Compile compiles a source file identified by srcPath.
 	// srcPath will be some path that matches according to the
 	// MatchFunc for the Compiler.
@@ -64,12 +65,11 @@ type Compiler interface {
 // Watcher is responsible for watching a specific set of files and
 // reacting to changes to those files.
 type Watcher interface {
-	PathMatcher
 	// PathChanged is triggered whenever a relevant file is changed
 	// Typically, the Watcher should recompile certain files.
 	// srcPath will be some path that matches according to the MatchFunc
 	// for the Watcher. ev is the FileEvent associated with the change.
-	PathChanged(srcPath string, ev fsnotify.FileEvent) error
+	FileChanged(srcPath string, ev fsnotify.FileEvent) error
 }
 
 // FindPaths iterates recursively through config.SourceDir and

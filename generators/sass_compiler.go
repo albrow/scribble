@@ -3,6 +3,7 @@ package generators
 import (
 	"fmt"
 	"github.com/albrow/scribble/config"
+	"github.com/howeyc/fsnotify"
 	"github.com/wsxiaoys/terminal/color"
 	"os"
 	"os/exec"
@@ -65,4 +66,8 @@ func (s SassCompilerType) CompileAll(srcPaths []string) error {
 		}
 	}
 	return nil
+}
+
+func (s SassCompilerType) FileChanged(srcPath string, ev fsnotify.FileEvent) error {
+	return fmt.Errorf("FileChanged not yet implemented!")
 }
