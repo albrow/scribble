@@ -10,14 +10,25 @@ import (
 	"strings"
 )
 
+// SassCompilerType represents a type capable of compiling sass files.
 type SassCompilerType struct{}
 
+// SassCompiler is an instatiation of SassCompilerType
 var SassCompiler = SassCompilerType{}
 
+// GetMatchFunc returns a MatchFunc which will return true for
+// any files which match a given pattern. In this case, the pattern
+// is any file that ends in ".scss", excluding hidden and ignored
+// files and directories.
 func (s SassCompilerType) GetMatchFunc() MatchFunc {
 	return filenameMatchFunc("*.scss", true, true)
 }
 
+// Compile compiles the file at srcPath. The caller will only
+// call this function for files which belong to SassCompiler
+// according to the MatchFunc. Behavior for any other file is
+// undefined. Compile will output the compiled result to the appropriate
+// location in config.DestDir.
 func (s SassCompilerType) Compile(srcPath string) error {
 	// parse path and figure out destPath
 	destPath := strings.Replace(srcPath, ".scss", ".css", 1)
@@ -42,6 +53,10 @@ func (s SassCompilerType) Compile(srcPath string) error {
 	return nil
 }
 
+// CompileAll compiles zero or more files identified by srcPaths.
+// It works simply by calling Compile for each path. The caller is
+// responsible for only passing in files that belong to SassCompiler
+// according to the MatchFunc. Behavior for any other file is undefined.
 func (s SassCompilerType) CompileAll(srcPaths []string) error {
 	fmt.Println("--> compiling sass")
 	for _, srcPath := range srcPaths {

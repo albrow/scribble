@@ -21,8 +21,13 @@ const (
 )
 
 func main() {
+	// catch panics and print them out as errors
 	defer util.Recovery()
+	// print out the version when prompted
 	kingpin.Version(version)
+
+	// Parse the command line arguments and flags and delegate
+	// to the appropriate functions.
 	cmd, err := app.Parse(os.Args[1:])
 	if err != nil {
 		app.Usage(os.Stdout)

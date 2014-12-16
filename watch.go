@@ -24,6 +24,8 @@ var watchMutex = sync.Mutex{}
 // only saved once.
 var fileHashes = map[string][]byte{}
 
+// watchAll begins watching all the files in config.SourceDir and reacts
+// to any changes.
 func watchAll() {
 	fmt.Println("--> watching for changes")
 	if watcher == nil {
@@ -58,6 +60,7 @@ func watchAll() {
 	}
 }
 
+// createWatcher creates and returns an fsnotify.Watcher.
 func createWatcher() *fsnotify.Watcher {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
@@ -87,32 +90,9 @@ func createWatcher() *fsnotify.Watcher {
 	return watcher
 }
 
-// func reactToPostChange(ev *fsnotify.FileEvent) {
-// 	if ev.IsCreate() || ev.IsModify() {
-// 		// recompile the single post
-// 		p := getOrCreatePostFromPath(ev.Name)
-// 		p.parse()
-// 		p.compile()
-// 		// recompile all pages, since they may depend on posts
-// 		compilePages()
-// 	} else if ev.IsRename() {
-// 		// recompile all posts
-// 		// TODO: detect which post was renamed and only recompile that one?
-// 		if p := getPostByPath(ev.Name); p != nil {
-// 			p.remove()
-// 		}
-// 		parsePosts()
-// 		compilePosts()
-// 		compilePages()
-// 	} else if ev.IsDelete() {
-// 		if p := getPostByPath(ev.Name); p != nil {
-// 			p.remove()
-// 		}
-// 		// recompile all pages, since they may depend on posts
-// 		compilePages()
-// 	}
-// }
-
+// fileDidChange uses the last known hash to determine whether or
+// not the file actually changed. It solves the problem of false positives
+// coming from fsnotify when used with a text editor that uses atomic saves.
 func fileDidChange(path string) bool {
 	if hash, found := fileHashes[path]; !found {
 		// we have not hashed the file before.
@@ -139,8 +119,8 @@ func fileDidChange(path string) bool {
 	}
 }
 
-// calculates a hash for the file at the given path. If the file
-// does not exist, the second return value will be false.
+// calculateHashForPath calculates a hash for the file at the given path.
+// If the file does not exist, the second return value will be false.
 func calculateHashForPath(path string) ([]byte, bool) {
 	h := xxhash.New64()
 	f, err := os.Open(path)

@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 )
 
+// compile compiles all the contents of config.SourceDir and puts the compiled
+// result in config.DestDir.
 func compile(watch bool) {
 	config.Parse()
 	fmt.Println("--> compiling")
@@ -32,6 +34,7 @@ func createDestDir() {
 	}
 }
 
+// removeAllOld removes all the files from config.DestDir
 func removeAllOld() {
 	fmt.Println("    removing old files")
 	// walk through the dest dir

@@ -17,39 +17,61 @@ import (
 	"time"
 )
 
+// PostsCompilerType represents a type capable of compiling post files.
 type PostsCompilerType struct {
 	pathMatch string
 }
 
+// PostCompiler is an instatiation of PostCompilerType
 var PostsCompiler = PostsCompilerType{
 	pathMatch: "",
 }
 
+// Post is an in-memory representation of the metadata for a given post.
+// Much of this data comes from the toml frontmatter.
 type Post struct {
-	Title       string        `toml:"title"`
-	Author      string        `toml:"author"`
-	Description string        `toml:"description"`
-	Date        time.Time     `toml:"date"`
-	Url         string        `toml:"-"` // the url for the post, not including protocol or domain name (useful for creating links)
-	Content     template.HTML `toml:"-"` // the html content for the post (parsed from markdown source)
-	src         string        `toml:"-"` // the full source path
+	Title       string    `toml:"title"`
+	Author      string    `toml:"author"`
+	Description string    `toml:"description"`
+	Date        time.Time `toml:"date"`
+	// the url for the post, not including protocol or domain name (useful for creating links)
+	Url string `toml:"-"`
+	// the html content for the post (parsed from markdown source)
+	Content template.HTML `toml:"-"`
+	// the full source path
+	src string `toml:"-"`
 }
 
 var (
-	posts    = []*Post{}
-	postsMap = map[string]*Post{} // a map of source path to post
+	// a slice of all posts
+	posts = []*Post{}
+	// a map of source path to post
+	postsMap = map[string]*Post{}
 )
 
+// Init should be called before any other methods. In this case, Init
+// sets up the pathMatch variable based on config.SourceDir and config.PostsDir
+// and adds the Posts helper function to FuncMap.
 func (p *PostsCompilerType) Init() {
 	p.pathMatch = fmt.Sprintf("%s/%s/*.md", config.SourceDir, config.PostsDir)
 	// Add the posts function to FuncMap
 	context.FuncMap["Posts"] = Posts
 }
 
+// GetMatchFunc returns a MatchFunc which will return true for
+// any files which match a given pattern. In this case, the pattern
+// is any file that is inside config.PostsDir and ends in ".md", excluding
+// hidden files and directories (which start with a ".") but not those
+// which start with an underscore.
 func (p PostsCompilerType) GetMatchFunc() MatchFunc {
 	return pathMatchFunc(p.pathMatch, true, false)
 }
 
+// Compile compiles the file at srcPath. The caller will only
+// call this function for files which belong to PostsCompiler
+// according to the MatchFunc. Behavior for any other file is
+// undefined. Compile will output the compiled result to the appropriate
+// location in config.DestDir.
 func (p PostsCompilerType) Compile(srcPath string) error {
 	// Get the parsed post object and determine dest path
 	post := getOrCreatePostFromPath(srcPath)
@@ -75,6 +97,10 @@ func (p PostsCompilerType) Compile(srcPath string) error {
 	return nil
 }
 
+// CompileAll compiles zero or more files identified by srcPaths.
+// It works simply by calling Compile for each path. The caller is
+// responsible for only passing in files that belong to AceCompiler
+// according to the MatchFunc. Behavior for any other file is undefined.
 func (p PostsCompilerType) CompileAll(srcPaths []string) error {
 	fmt.Println("--> compiling posts")
 	for _, srcPath := range srcPaths {

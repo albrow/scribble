@@ -28,6 +28,8 @@ var UnmatchedPaths = []string{}
 // to specify which paths they are concerned with.
 type MatchFunc func(path string) (bool, error)
 
+// Initer is an interface satisfied by any Compiler which needs
+// to do something before Compile or CompileAll are called.
 type Initer interface {
 	// Init allows a Compiler or Watcher to do any necessary
 	// setup before other methods are called. (e.g. set the
@@ -37,6 +39,8 @@ type Initer interface {
 	Init()
 }
 
+// PathMatcher is responsible for managing a certain set of files
+// selected via a simple matching function.
 type PathMatcher interface {
 	// GetMatchFunc returns a MatchFunc, which in this context
 	// will be used by a Compiler or Watcher to specify which paths
@@ -44,6 +48,7 @@ type PathMatcher interface {
 	GetMatchFunc() MatchFunc
 }
 
+// Compiler is capable of compiling a certain type of file.
 type Compiler interface {
 	PathMatcher
 	// Compile compiles a source file identified by srcPath.
@@ -56,6 +61,8 @@ type Compiler interface {
 	CompileAll(srcPaths []string) error
 }
 
+// Watcher is responsible for watching a specific set of files and
+// reacting to changes to those files.
 type Watcher interface {
 	PathMatcher
 	// PathChanged is triggered whenever a relevant file is changed
@@ -79,8 +86,7 @@ func FindPaths(m PathMatcher) ([]string, error) {
 
 // CompileAll compiles all files in config.SourceDir by delegating each path to
 // it's corresponding Compiler. If a path in config.SourceDir does not match any Compiler,
-// it will be copied to config.DestDir directly. Any files or directories that start
-// with an undercore ("_") will be ignored.
+// it will be copied to config.DestDir directly.
 func CompileAll() error {
 	initCompilers()
 	if err := delegatePaths(); err != nil {

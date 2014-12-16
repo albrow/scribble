@@ -45,7 +45,7 @@ func SplitFrontMatter(r *bufio.Reader) (frontMatter string, content string, err 
 	}
 }
 
-// containsFrontMatter returns true iff the contents of r include
+// ContainsFrontMatter returns true iff the contents of r include
 // frontmatter. It checks the first couple of bytes to see if they
 // equal the front matter delimiter without changing the position of
 // r.

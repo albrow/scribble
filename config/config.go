@@ -12,11 +12,12 @@ var (
 )
 
 // Parse reads and parses config.toml, setting the values
-// of the above config variables.
+// of the config variables here and in the context.
 func Parse() {
 	fmt.Println("--> parsing config.toml")
 	if _, err := toml.DecodeFile("config.toml", context.GetContext()); err != nil {
-		panic(err)
+		msg := fmt.Sprintf("Problem reading config.toml file:\n%s", err)
+		panic(msg)
 	}
 	vars := map[string]*string{
 		"sourceDir":  &SourceDir,
