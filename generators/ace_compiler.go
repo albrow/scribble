@@ -41,7 +41,7 @@ func (a AceCompilerType) Compile(srcPath string) error {
 	// Open the source file
 	srcFile, err := os.Open(srcPath)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	reader := bufio.NewReader(srcFile)
 

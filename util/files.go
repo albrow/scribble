@@ -11,15 +11,14 @@ import (
 // the file will be placed in with os.MkdirAll (analogous to mkdir -p),
 // and then creating the file itself. If the file already exists, it will
 // overwrite the existing file. If there were any other problems creating
-// the file, it will panic, expecting that some caller higher up in the
-// stack will reecover.
+// the file, it will return an error.
 func CreateFileWithPath(path string) (*os.File, error) {
 	dir := filepath.Dir(path)
 	// First create the directory if needed
 	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
 		if !os.IsExist(err) {
 			// If the dir already existed, that's fine.
-			// For any other error, we should panic.
+			// For any other error, we should return it.
 			return nil, err
 		}
 	}
@@ -27,7 +26,7 @@ func CreateFileWithPath(path string) (*os.File, error) {
 	file, err := os.Create(path)
 	if err != nil && !os.IsExist(err) {
 		// If the file already existed, that's fine.
-		// For any other error, we should panic.
+		// For any other error, we should return it.
 		return nil, err
 	}
 	return file, nil

@@ -14,8 +14,12 @@ import (
 func compile(watch bool) {
 	config.Parse()
 	fmt.Println("--> compiling")
-	createDestDir()
-	removeAllOld()
+	if err := createDestDir(); err != nil {
+		panic(err)
+	}
+	if err := removeAllOld(); err != nil {
+		panic(err)
+	}
 	if err := generators.CompileAll(); err != nil {
 		util.ChimeError(err)
 	}
@@ -24,18 +28,19 @@ func compile(watch bool) {
 	// }
 }
 
-func createDestDir() {
+func createDestDir() error {
 	if err := os.MkdirAll(config.DestDir, os.ModePerm); err != nil {
 		if !os.IsExist(err) {
 			// If the directory already existed, that's fine,
-			// otherwise panic.
-			panic(err)
+			// otherwise return the error
+			return err
 		}
 	}
+	return nil
 }
 
 // removeAllOld removes all the files from config.DestDir
-func removeAllOld() {
+func removeAllOld() error {
 	fmt.Println("    removing old files")
 	// walk through the dest dir
 	if err := filepath.Walk(config.DestDir, func(path string, info os.FileInfo, err error) error {
@@ -49,20 +54,21 @@ func removeAllOld() {
 			// remove the dir and everything in it
 			if err := os.RemoveAll(path); err != nil {
 				if !os.IsNotExist(err) {
-					// if the dir was already removed, that's fine
-					// if there was some other error, panic
-					panic(err)
+					// if the dir was already removed, that's fine.
+					// if there was some other error, return it
+					return err
 				}
 			}
 			return filepath.SkipDir
 		} else {
 			// remove the file
 			if err := os.Remove(path); err != nil {
-				panic(err)
+				return err
 			}
 		}
 		return nil
 	}); err != nil {
-		panic(err)
+		return err
 	}
+	return nil
 }

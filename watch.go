@@ -29,10 +29,12 @@ var fileHashes = map[string][]byte{}
 func watchAll() {
 	fmt.Println("--> watching for changes")
 	if watcher == nil {
-		watcher = createWatcher()
+		var err error
+		watcher, err = createWatcher()
+		if err != nil {
+			panic(err)
+		}
 	}
-	// TODO: be more intelligent here. E.g. if a sass file changes,
-	// only recompile the sass files.
 
 	// walk through source dir and watch all subdirectories
 	// we have to do this because fsnotify is currently not recursive
@@ -61,10 +63,10 @@ func watchAll() {
 }
 
 // createWatcher creates and returns an fsnotify.Watcher.
-func createWatcher() *fsnotify.Watcher {
+func createWatcher() (*fsnotify.Watcher, error) {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	// Process events
@@ -78,7 +80,9 @@ func createWatcher() *fsnotify.Watcher {
 					// ignore hidden system files
 					continue
 				}
-				if fileDidChange(ev.Name) {
+				if changed, err := fileDidChange(ev.Name); err != nil {
+					panic(err)
+				} else if changed {
 					color.Printf("@y    CHANGED: %s\n", ev.Name)
 					// TODO: rewrite this
 				}
@@ -87,51 +91,53 @@ func createWatcher() *fsnotify.Watcher {
 			}
 		}
 	}()
-	return watcher
+	return watcher, nil
 }
 
 // fileDidChange uses the last known hash to determine whether or
 // not the file actually changed. It solves the problem of false positives
 // coming from fsnotify when used with a text editor that uses atomic saves.
-func fileDidChange(path string) bool {
+func fileDidChange(path string) (bool, error) {
 	if hash, found := fileHashes[path]; !found {
 		// we have not hashed the file before.
 		// hash it now and store the value
-		newHash, exists := calculateHashForPath(path)
-		if exists {
+		if newHash, exists, err := calculateHashForPath(path); err != nil {
+			return false, err
+		} else if exists {
 			fileHashes[path] = newHash
 		}
-		return true
+		return true, nil
 	} else {
-		newHash, exists := calculateHashForPath(path)
-		if !exists {
+		if newHash, exists, err := calculateHashForPath(path); err != nil {
+			return false, err
+		} else if !exists {
 			// if the file no longer exists, it has been deleted
 			// we should consider that a change and recompile
 			delete(fileHashes, path)
-			return true
+			return true, nil
 		} else if string(newHash) != string(hash) {
 			// if the file does exist and has a different hash, there
 			// was an actual change and we should recompile
 			fileHashes[path] = newHash
-			return true
+			return true, nil
 		}
-		return false
+		return false, nil
 	}
 }
 
 // calculateHashForPath calculates a hash for the file at the given path.
 // If the file does not exist, the second return value will be false.
-func calculateHashForPath(path string) ([]byte, bool) {
+func calculateHashForPath(path string) ([]byte, bool, error) {
 	h := xxhash.New64()
 	f, err := os.Open(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, false
+			return nil, false, nil
 		} else {
-			panic(err)
+			return nil, false, err
 		}
 	}
 	io.Copy(h, f)
 	result := h.Sum(nil)
-	return result, true
+	return result, true, nil
 }

@@ -88,7 +88,9 @@ func (p PostsCompilerType) Compile(srcPath string) error {
 
 	// Get and compile the template
 	tmpl := getPostTemplate()
-	post.parse()
+	if err := post.parse(); err != nil {
+		return err
+	}
 	postContext := context.CopyContext()
 	postContext["Post"] = post
 	if err := tmpl.Execute(destFile, postContext); err != nil {
@@ -148,27 +150,28 @@ func getOrCreatePostFromPath(path string) *Post {
 
 // parse reads from the source file and sets the content and metadata fields
 // for the post
-func (p *Post) parse() {
+func (p *Post) parse() error {
 	// open the source file
 	file, err := os.Open(p.src)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	r := bufio.NewReader(file)
 
 	// split the file into frontmatter and markdown content
 	frontMatter, content, err := util.SplitFrontMatter(r)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	// decode the frontmatter
 	if _, err := toml.Decode(frontMatter, p); err != nil {
-		panic(err)
+		return err
 	}
 
 	// parse the markdown content and set p.Content
 	p.Content = template.HTML(blackfriday.MarkdownCommon([]byte(content)))
+	return nil
 }
 
 // getPostTemplate returns the ace template which
