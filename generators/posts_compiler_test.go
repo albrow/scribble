@@ -43,7 +43,7 @@ func TestPostsPathMatch(t *testing.T) {
 
 	// Use the MatchFunc to find all the paths
 	config.SourceDir = root
-	gotPaths, err := FindPaths(PostsCompiler)
+	gotPaths, err := FindPaths(PostsCompiler.CompileMatchFunc())
 	if err != nil {
 		t.Error(err)
 	}

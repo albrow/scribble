@@ -59,12 +59,19 @@ func (p *PostsCompilerType) Init() {
 	context.FuncMap["Posts"] = Posts
 }
 
-// GetMatchFunc returns a MatchFunc which will return true for
+// CompileMatchFunc returns a MatchFunc which will return true for
 // any files which match a given pattern. In this case, the pattern
 // is any file that is inside config.PostsDir and ends in ".md", excluding
 // hidden files and directories (which start with a ".") but not those
 // which start with an underscore.
-func (p PostsCompilerType) GetMatchFunc() MatchFunc {
+func (p PostsCompilerType) CompileMatchFunc() MatchFunc {
+	return pathMatchFunc(p.pathMatch, true, false)
+}
+
+// WatchMatchFunc returns a MatchFunc which will return true for
+// any files which match a given pattern. In this case, the pattern
+// is the same as it is for CompileMatchFunc.
+func (p PostsCompilerType) WatchMatchFunc() MatchFunc {
 	return pathMatchFunc(p.pathMatch, true, false)
 }
 

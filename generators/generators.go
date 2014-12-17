@@ -39,19 +39,14 @@ type Initer interface {
 	Init()
 }
 
-// PathMatcher is responsible for managing a certain set of files
-// selected via a simple matching function.
-type PathMatcher interface {
-	// GetMatchFunc returns a MatchFunc, which in this context
-	// will be used by a Compiler or Watcher to specify which paths
-	// it is concerned with.
-	GetMatchFunc() MatchFunc
-}
-
-// Compiler is capable of compiling a certain type of file.
+// Compiler is capable of compiling a certain type of file. It
+// also is responsible for watching for changes to certain types
+// of files.
 type Compiler interface {
-	PathMatcher
-	Watcher
+	// CompileMatchFunc returns a MatchFunc which will be applied
+	// to every path in config.SourceDir to determine which paths
+	// a Compiler is responsible for compiling.
+	CompileMatchFunc() MatchFunc
 	// Compile compiles a source file identified by srcPath.
 	// srcPath will be some path that matches according to the
 	// MatchFunc for the Compiler.
@@ -60,24 +55,26 @@ type Compiler interface {
 	// srcPaths will be all paths that match according to
 	// the MatchFunc for the Compiler.
 	CompileAll(srcPaths []string) error
-}
-
-// Watcher is responsible for watching a specific set of files and
-// reacting to changes to those files.
-type Watcher interface {
-	// PathChanged is triggered whenever a relevant file is changed
-	// Typically, the Watcher should recompile certain files.
-	// srcPath will be some path that matches according to the MatchFunc
-	// for the Watcher. ev is the FileEvent associated with the change.
+	// WatchMatchFunc returns a MatchFunc which will be applied
+	// to every path in config.SourceDir to determine which paths
+	// a Compiler is responsible for watching. Note that the files
+	// that are watched may not be the same as those that are compiled.
+	// E.g, files that start with an underscore are typically not compiled,
+	// but may be imported or used by other files that are compiled, and
+	// therefore should be watched.
+	WatchMatchFunc() MatchFunc
+	// FileChanged is triggered whenever a relevant file is changed.
+	// Typically, the Compiler should recompile certain files.
+	// srcPath will be some path that matches according to WatchMatchFunc,
+	// and ev is the FileEvent associated with the change.
 	FileChanged(srcPath string, ev fsnotify.FileEvent) error
 }
 
 // FindPaths iterates recursively through config.SourceDir and
-// returns all the matched paths for m.
-func FindPaths(m PathMatcher) ([]string, error) {
+// returns all the matched paths using mf as a MatchFunc.
+func FindPaths(mf MatchFunc) ([]string, error) {
 	paths := []string{}
-	matchFunc := m.GetMatchFunc()
-	walkFunc := matchWalkFunc(&paths, matchFunc)
+	walkFunc := matchWalkFunc(&paths, mf)
 	if err := filepath.Walk(config.SourceDir, walkFunc); err != nil {
 		return nil, err
 	}
@@ -127,7 +124,7 @@ func delegatePaths() error {
 		}
 		matched := false
 		for _, c := range Compilers {
-			if match, err := c.GetMatchFunc()(path); err != nil {
+			if match, err := c.CompileMatchFunc()(path); err != nil {
 				return err
 			} else if match {
 				matched = true

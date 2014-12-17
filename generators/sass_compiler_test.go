@@ -45,7 +45,7 @@ func TestSassPathMatch(t *testing.T) {
 
 	// Use the MatchFunc to find all the paths
 	config.SourceDir = root
-	gotPaths, err := FindPaths(SassCompiler)
+	gotPaths, err := FindPaths(SassCompiler.CompileMatchFunc())
 	if err != nil {
 		t.Error(err)
 	}

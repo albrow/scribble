@@ -20,12 +20,22 @@ type AceCompilerType struct{}
 // AceCompiler is an instatiation of AceCompilerType
 var AceCompiler = AceCompilerType{}
 
-// GetMatchFunc returns a MatchFunc which will return true for
+// CompileMatchFunc returns a MatchFunc which will return true for
 // any files which match a given pattern. In this case, the pattern
 // is any file that ends in ".ace", excluding hidden and ignored
 // files and directories.
-func (a AceCompilerType) GetMatchFunc() MatchFunc {
+func (a AceCompilerType) CompileMatchFunc() MatchFunc {
 	return filenameMatchFunc("*.ace", true, true)
+}
+
+// WatchMatchFunc returns a MatchFunc which will return true for
+// any files which match a given pattern. In this case, the pattern
+// is any file that ends in ".ace", excluding hidden files and directories
+// but including those that start with an underscore. Files which
+// start with an underscore may be included in other files, so we
+// need to watch them too.
+func (a AceCompilerType) WatchMatchFunc() MatchFunc {
+	return filenameMatchFunc("*.ace", true, false)
 }
 
 // Compile compiles the file at srcPath. The caller will only

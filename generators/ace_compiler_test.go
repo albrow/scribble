@@ -44,7 +44,7 @@ func TestAcePathMatch(t *testing.T) {
 
 	// Use the MatchFunc to find all the paths
 	config.SourceDir = root
-	gotPaths, err := FindPaths(AceCompiler)
+	gotPaths, err := FindPaths(AceCompiler.CompileMatchFunc())
 	if err != nil {
 		t.Error(err)
 	}

@@ -17,11 +17,20 @@ type SassCompilerType struct{}
 // SassCompiler is an instatiation of SassCompilerType
 var SassCompiler = SassCompilerType{}
 
-// GetMatchFunc returns a MatchFunc which will return true for
+// CompileMatchFunc returns a MatchFunc which will return true for
 // any files which match a given pattern. In this case, the pattern
 // is any file that ends in ".scss", excluding hidden and ignored
 // files and directories.
-func (s SassCompilerType) GetMatchFunc() MatchFunc {
+func (s SassCompilerType) CompileMatchFunc() MatchFunc {
+	return filenameMatchFunc("*.scss", true, true)
+}
+
+// WatchMatchFunc returns a MatchFunc which will return true for
+// any files which match a given pattern. In this case, the pattern
+// is any file that ends in ".scss", excluding hidden files and directories,
+// but including those that start with an underscore, since they may
+// be imported in other files.
+func (s SassCompilerType) WatchMatchFunc() MatchFunc {
 	return filenameMatchFunc("*.scss", true, true)
 }
 
