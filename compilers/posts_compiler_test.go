@@ -5,6 +5,7 @@ import (
 	"github.com/albrow/scribble/test_util"
 	"github.com/albrow/scribble/util"
 	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -53,7 +54,6 @@ func TestPostsPathMatch(t *testing.T) {
 }
 
 func TestPostsCompiler(t *testing.T) {
-	t.Skip("Skipping TestPostsCompiler until template rewriting is complete.")
 	// Create a root path where all of our test files for this
 	// test will live
 	root := "/tmp/test_posts_compiler"
@@ -75,12 +75,11 @@ func TestPostsCompiler(t *testing.T) {
 	}
 
 	// Attempt to compile the posts
-	config.SourceDir = root
-	config.PostsDir = "_posts"
-	config.LayoutsDir = "_layouts"
-	config.ViewsDir = "_views"
-	config.DestDir = root + "/public"
-	if err := PostsCompiler.Compile(root + "_posts/post.md"); err != nil {
+	config.SourceDir = filepath.Join(root, "source")
+	config.PostsDir = filepath.Join(config.SourceDir, "_posts")
+	config.LayoutsDir = filepath.Join(config.SourceDir, "_layouts")
+	config.DestDir = filepath.Join(root, "public")
+	if err := PostsCompiler.Compile(filepath.Join(config.PostsDir, "post.md")); err != nil {
 		t.Fatal(err)
 	}
 

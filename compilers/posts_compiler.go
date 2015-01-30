@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/BurntSushi/toml"
-	"github.com/albrow/ace"
 	"github.com/albrow/scribble/config"
 	"github.com/albrow/scribble/context"
 	"github.com/albrow/scribble/util"
@@ -36,11 +35,13 @@ type Post struct {
 	Description string    `toml:"description"`
 	Date        time.Time `toml:"date"`
 	// the url for the post, not including protocol or domain name (useful for creating links)
-	Url string `toml:"-"`
+	Url template.URL `toml:"-"`
 	// the html content for the post (parsed from markdown source)
 	Content template.HTML `toml:"-"`
 	// the full source path
 	src string `toml:"-"`
+	// the layout tmpl file to be used for the post
+	Layout string `toml:"layout"`
 }
 
 var (
@@ -94,15 +95,25 @@ func (p PostsCompilerType) Compile(srcPath string) error {
 		return err
 	}
 
-	// Get and compile the template
-	tmpl := getPostTemplate()
+	// Parse content and frontmatter, then set the appropriate layout based on
+	// the layout key in the frontmatter
 	if err := post.parse(); err != nil {
+		return err
+	}
+	layout := "post.tmpl"
+	if post.Layout != "" {
+		layout = post.Layout
+	}
+
+	// Get and compile the template with the right context
+	tmpl, err := postTemplate()
+	if err != nil {
 		return err
 	}
 	postContext := context.CopyContext()
 	postContext["Post"] = post
-	if err := tmpl.Execute(destFile, postContext); err != nil {
-		return fmt.Errorf("ERROR compiling ace template for posts: %s", err.Error())
+	if err := tmpl.ExecuteTemplate(destFile, layout, postContext); err != nil {
+		return fmt.Errorf("ERROR compiling html template for posts: %s", err.Error())
 	}
 	return nil
 }
@@ -142,7 +153,7 @@ func createPostFromPath(path string) *Post {
 	// create post object
 	name := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
 	p := &Post{
-		Url: "/" + name,
+		Url: template.URL("/" + name),
 		src: path,
 	}
 	posts = append(posts, p)
@@ -188,21 +199,17 @@ func (p *Post) parse() error {
 	return nil
 }
 
-// getPostTemplate returns the ace template which
-// is to be used for rendering all posts.
-func getPostTemplate() *template.Template {
-	// TODO: detect layout from frontmatter
-	basePath := fmt.Sprintf("%s/base", config.LayoutsDir)
-	viewPath := fmt.Sprintf("%s/post", config.ViewsDir)
-	tpl, err := ace.Load(basePath, viewPath, &ace.Options{
-		DynamicReload: true,
-		BaseDir:       config.SourceDir,
-		FuncMap:       context.FuncMap,
-	})
-	if err != nil {
-		util.ChimeError(err)
+// postTemplate returns an html template which is to be used for rendering all posts.
+// The template returned has parsed all the layouts in the layouts directory. You can
+// change which layout is actually executed by using the ExecuteTemplate method and passing
+// in post.layout.
+func postTemplate() (*template.Template, error) {
+	// Create the tmpl file by parsing all the templates
+	tmpl := template.New("post_template")
+	if _, err := tmpl.ParseGlob(filepath.Join(config.LayoutsDir, "*.tmpl")); err != nil {
+		return nil, err
 	}
-	return tpl
+	return tmpl, nil
 }
 
 // The PostsByDate type is used only for sorting

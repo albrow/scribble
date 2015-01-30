@@ -1,6 +1,0 @@
-= doctype html
-html
-  head
-    title Ace Testing
-  body
-    = yield main
