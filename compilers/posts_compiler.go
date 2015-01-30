@@ -193,14 +193,13 @@ func (p *Post) parse() error {
 	p.Content = template.HTML(blackfriday.MarkdownCommon([]byte(content)))
 
 	// Create a template for the post
-	postLayout := "post.tmpl"
-	if p.Layout != "" {
-		postLayout = p.Layout
+	if p.Layout == "" {
+		return fmt.Errorf("Could not find layout definition in toml frontmatter for post: %s", p.src)
 	}
 
 	// When we call template.ParseFiles, we want the post layout file to be first,
 	// so it is the one that will be executed.
-	postLayoutFile := filepath.Join(config.PostLayoutsDir, postLayout)
+	postLayoutFile := filepath.Join(config.PostLayoutsDir, p.Layout)
 	otherLayoutFiles, err := filepath.Glob(filepath.Join(config.LayoutsDir, "*.tmpl"))
 	if err != nil {
 		return err
