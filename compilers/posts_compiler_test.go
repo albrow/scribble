@@ -36,7 +36,7 @@ func TestPostsPathMatch(t *testing.T) {
 	// Only some paths are expected to be matched by the PostsCompiler,
 	// the other files should be ignored.
 	config.SourceDir = root
-	config.PostsDir = "_posts"
+	config.PostsDir = filepath.Join(config.SourceDir, "_posts")
 	PostsCompiler.Init()
 	expectedPaths := []string{
 		root + "/_posts/post.md",

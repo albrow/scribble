@@ -55,7 +55,7 @@ var (
 // sets up the pathMatch variable based on config.SourceDir and config.PostsDir
 // and adds the Posts helper function to FuncMap.
 func (p *PostsCompilerType) Init() {
-	p.pathMatch = fmt.Sprintf("%s/%s/*.md", config.SourceDir, config.PostsDir)
+	p.pathMatch = fmt.Sprintf("%s/*.md", config.PostsDir)
 	// Add the posts function to FuncMap
 	context.FuncMap["Posts"] = Posts
 }
