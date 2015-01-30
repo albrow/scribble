@@ -17,7 +17,7 @@ import (
 // the existence of a list of parsed Post objects. For example,
 // AceCompiler relies on the Posts function returning the correct
 // results inside of ace templates.
-var Compilers = []Compiler{&PostsCompiler, &SassCompiler, &AceCompiler}
+var Compilers = []Compiler{&PostsCompiler, &SassCompiler}
 
 // CompilerPaths is a map of Compiler to the matched paths for that Compiler
 var CompilerPaths = map[Compiler][]string{}

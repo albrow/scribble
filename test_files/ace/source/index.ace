@@ -1,3 +1,0 @@
-= content inner
-  h1
-    = include _includes/greet
