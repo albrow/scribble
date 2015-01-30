@@ -57,7 +57,7 @@ var (
 // sets up the pathMatch variable based on config.SourceDir and config.PostsDir
 // and adds the Posts helper function to FuncMap.
 func (p *PostsCompilerType) Init() {
-	p.pathMatch = fmt.Sprintf("%s/*.md", config.PostsDir)
+	p.pathMatch = filepath.Join(config.PostsDir, "*.md")
 	// Add the posts function to FuncMap
 	context.FuncMap["Posts"] = Posts
 }
@@ -88,7 +88,7 @@ func (p PostsCompilerType) Compile(srcPath string) error {
 	post := getOrCreatePostFromPath(srcPath)
 	srcFilename := filepath.Base(srcPath)
 	destPath := fmt.Sprintf("%s/%s", config.DestDir, strings.TrimSuffix(srcFilename, ".md"))
-	destIndexFilePath := destPath + "/index.html"
+	destIndexFilePath := filepath.Join(destPath, "index.html")
 	color.Printf("@g    CREATE: %s -> %s\n", srcPath, destIndexFilePath)
 
 	// Create the index file

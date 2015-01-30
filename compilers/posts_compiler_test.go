@@ -12,7 +12,7 @@ import (
 func TestPostsPathMatch(t *testing.T) {
 	// Create a root path where all of our test files for this
 	// test will live
-	root := "/tmp/posts_compiler_paths"
+	root := string(os.PathSeparator) + filepath.Join("tmp", "posts_compiler_paths")
 	defer func() {
 		// Remove everything after we're done
 		if err := os.RemoveAll(root); err != nil {
@@ -24,10 +24,10 @@ func TestPostsPathMatch(t *testing.T) {
 
 	// Create a few files.
 	tmpPaths := []string{
-		root + "/_posts/post.md",
-		root + "/_posts/post.ace",
-		root + "/_posts/README",
-		root + "/other_dir/post.md",
+		filepath.Join(root, "_posts", "post.md"),
+		filepath.Join(root, "_posts", "post.ace"),
+		filepath.Join(root, "_posts", "README"),
+		filepath.Join(root, "other_dir", "post.md"),
 	}
 	if err := util.CreateEmptyFiles(tmpPaths); err != nil {
 		t.Fatal(err)
@@ -39,7 +39,7 @@ func TestPostsPathMatch(t *testing.T) {
 	config.PostsDir = filepath.Join(config.SourceDir, "_posts")
 	PostsCompiler.Init()
 	expectedPaths := []string{
-		root + "/_posts/post.md",
+		filepath.Join(root, "_posts", "post.md"),
 	}
 
 	// Use the MatchFunc to find all the paths
@@ -56,7 +56,7 @@ func TestPostsPathMatch(t *testing.T) {
 func TestPostsCompiler(t *testing.T) {
 	// Create a root path where all of our test files for this
 	// test will live
-	root := "/tmp/test_posts_compiler"
+	root := string(os.PathSeparator) + filepath.Join("tmp", "test_posts_compiler")
 	defer func() {
 		// Remove everything after we're done
 		if err := os.RemoveAll(root); err != nil {
@@ -67,10 +67,10 @@ func TestPostsCompiler(t *testing.T) {
 	}()
 
 	// Copy some files from test_files to source directory in the temp root
-	testFilesDir := os.Getenv("GOPATH") + "/src/github.com/albrow/scribble/test_files/posts"
-	srcDir := root + "/source"
-	destDir := root + "/public"
-	if err := util.RecursiveCopy(testFilesDir+"/source", srcDir); err != nil {
+	testFilesDir := filepath.Join(os.Getenv("GOPATH"), "src", "github.com", "albrow", "scribble", "test_files", "posts")
+	srcDir := filepath.Join(root, "source")
+	destDir := filepath.Join(root, "public")
+	if err := util.RecursiveCopy(filepath.Join(testFilesDir, "source"), srcDir); err != nil {
 		t.Fatal(err)
 	}
 
@@ -85,6 +85,8 @@ func TestPostsCompiler(t *testing.T) {
 	}
 
 	// Make sure the compiled result is correct
-	expectedDir := testFilesDir + "/public"
-	test_util.CheckFilesMatch(t, expectedDir+"/post/index.html", destDir+"/post/index.html")
+	expectedDir := filepath.Join(testFilesDir, "public")
+	expectedFile := filepath.Join(expectedDir, "post", "index.html")
+	gotFile := filepath.Join(destDir, "post", "index.html")
+	test_util.CheckFilesMatch(t, expectedFile, gotFile)
 }

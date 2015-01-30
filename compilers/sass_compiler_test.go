@@ -5,13 +5,14 @@ import (
 	"github.com/albrow/scribble/test_util"
 	"github.com/albrow/scribble/util"
 	"os"
+	"path/filepath"
 	"testing"
 )
 
 func TestSassPathMatch(t *testing.T) {
 	// Create a root path where all of our test files for this
 	// test will live
-	root := "/tmp/sass_compiler"
+	root := string(os.PathSeparator) + filepath.Join("tmp", "sass_compiler_paths")
 	defer func() {
 		// Remove everything after we're done
 		if err := os.RemoveAll(root); err != nil {
@@ -23,14 +24,14 @@ func TestSassPathMatch(t *testing.T) {
 
 	// Create a few files.
 	tmpPaths := []string{
-		root + "/styles/main.scss",
-		root + "/styles/_colors.scss",
-		root + "/styles/_body.scss",
-		root + "/styles/notice.txt",
-		root + "/styles/README",
-		root + "/_sass/main.scss",
-		root + "/.sass/main.scss",
-		root + "/more_sass/other_stuff/this.scss",
+		filepath.Join(root, "styles", "main.scss"),
+		filepath.Join(root, "styles", "_colors.scss"),
+		filepath.Join(root, "styles", "_body.scss"),
+		filepath.Join(root, "styles", "notice.txt"),
+		filepath.Join(root, "styles", "README"),
+		filepath.Join(root, "_sass", "main.scss"),
+		filepath.Join(root, ".sass", "main.scss"),
+		filepath.Join(root, "more_sass", "other_stuff", "this.scss"),
 	}
 	if err := util.CreateEmptyFiles(tmpPaths); err != nil {
 		t.Fatal(err)
@@ -39,8 +40,8 @@ func TestSassPathMatch(t *testing.T) {
 	// Only some paths are expected to be matched by the SassCompiler,
 	// the other files should be ignored.
 	expectedPaths := []string{
-		root + "/styles/main.scss",
-		root + "/more_sass/other_stuff/this.scss",
+		filepath.Join(root, "styles", "main.scss"),
+		filepath.Join(root, "more_sass", "other_stuff", "this.scss"),
 	}
 
 	// Use the MatchFunc to find all the paths
@@ -57,7 +58,7 @@ func TestSassPathMatch(t *testing.T) {
 func TestSassCompile(t *testing.T) {
 	// Create a root path where all of our test files for this
 	// test will live
-	root := "/tmp/test_sass_compiler"
+	root := string(os.PathSeparator) + filepath.Join("tmp", "test_sass_compiler")
 	defer func() {
 		// Remove everything after we're done
 		if err := os.RemoveAll(root); err != nil {
@@ -68,21 +69,23 @@ func TestSassCompile(t *testing.T) {
 	}()
 
 	// Copy some files from test_files to source directory in the temp root
-	testFilesDir := os.Getenv("GOPATH") + "/src/github.com/albrow/scribble/test_files/sass"
-	srcDir := root + "/source"
-	destDir := root + "/public"
+	testFilesDir := filepath.Join(os.Getenv("GOPATH"), "src", "github.com", "albrow", "scribble", "test_files", "sass")
+	srcDir := filepath.Join(root, "source")
+	destDir := filepath.Join(root, "public")
 	if err := util.RecursiveCopy(testFilesDir+"/source", srcDir); err != nil {
 		t.Fatal(err)
 	}
 
 	// Attempt to compile the sass files
-	config.SourceDir = root + "/source"
-	config.DestDir = root + "/public"
+	config.SourceDir = filepath.Join(root, "source")
+	config.DestDir = filepath.Join(root, "public")
 	if err := SassCompiler.Compile(srcDir + "/styles/main.scss"); err != nil {
 		t.Fatal(err)
 	}
 
 	// Make sure the compiled result is correct
-	expectedDir := testFilesDir + "/public"
-	test_util.CheckFilesMatch(t, expectedDir+"/styles/main.css", destDir+"/styles/main.css")
+	expectedDir := filepath.Join(testFilesDir, "public")
+	expectedFile := filepath.Join(expectedDir, "styles", "main.css")
+	gotFile := filepath.Join(destDir, "styles", "main.css")
+	test_util.CheckFilesMatch(t, expectedFile, gotFile)
 }

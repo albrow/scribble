@@ -198,8 +198,7 @@ func filenameMatchFunc(pattern string, ignoreHidden bool, ignoreUnderscore bool)
 			// that begin with a '.'. If we find the substring "/."
 			// it must mean that some file or directory in the path
 			// is hidden.
-			// TODO: Make this compatible with windows.
-			if strings.Contains(path, "/.") {
+			if strings.Contains(path, string(os.PathSeparator)+".") {
 				return false, nil
 			}
 		}
@@ -208,8 +207,7 @@ func filenameMatchFunc(pattern string, ignoreHidden bool, ignoreUnderscore bool)
 			// which have special meaning in scribble and should typically
 			// be ignored. If we find the substring "/_" it must mean that some
 			// file or directory in the path starts with an underscore.
-			// TODO: Make this compatible with windows.
-			if strings.Contains(path, "/_") {
+			if strings.Contains(path, string(os.PathSeparator)+"_") {
 				return false, nil
 			}
 		}
@@ -231,7 +229,7 @@ func pathMatchFunc(pattern string, ignoreHidden bool, ignoreUnderscore bool) Mat
 			// it must mean that some file or directory in the path
 			// is hidden.
 			// TODO: Make this compatible with windows.
-			if strings.Contains(path, "/.") {
+			if strings.Contains(path, string(os.PathSeparator)+".") {
 				return false, nil
 			}
 		}
@@ -241,7 +239,7 @@ func pathMatchFunc(pattern string, ignoreHidden bool, ignoreUnderscore bool) Mat
 			// be ignored. If we find the substring "/_" it must mean that some
 			// file or directory in the path starts with an underscore.
 			// TODO: Make this compatible with windows.
-			if strings.Contains(path, "/_") {
+			if strings.Contains(path, string(os.PathSeparator)+"_") {
 				return false, nil
 			}
 		}

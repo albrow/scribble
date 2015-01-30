@@ -5,13 +5,14 @@ import (
 	"github.com/albrow/scribble/test_util"
 	"github.com/albrow/scribble/util"
 	"os"
+	"path/filepath"
 	"testing"
 )
 
 func TestHtmlTemplatesPathMatch(t *testing.T) {
 	// Create a root path where all of our test files for this
 	// test will live
-	root := "/tmp/html_templates_compiler"
+	root := string(os.PathSeparator) + filepath.Join("tmp", "html_templates_compiler_paths")
 	defer func() {
 		// Remove everything after we're done
 		if err := os.RemoveAll(root); err != nil {
@@ -23,14 +24,14 @@ func TestHtmlTemplatesPathMatch(t *testing.T) {
 
 	// Create a few files.
 	tmpPaths := []string{
-		root + "/index.tmpl",
-		root + "/pages/about.tmpl",
-		root + "/pages/_partial.tmpl",
-		root + "/notice.txt",
-		root + "/other/README",
-		root + "/_layouts/main.tmpl",
-		root + "/.build/tmpl/main.tmpl",
-		root + "/more_pages/other_stuff/page.tmpl",
+		filepath.Join(root, "index.tmpl"),
+		filepath.Join(root, "pages", "about.tmpl"),
+		filepath.Join(root, "pages", "_partial.tmpl"),
+		filepath.Join(root, "notice.txt"),
+		filepath.Join(root, "other", "README"),
+		filepath.Join(root, "_layouts", "main.tmpl"),
+		filepath.Join(root, ".build", "tmpl", "main.tmpl"),
+		filepath.Join(root, "more_pages", "other_stuff", "page.tmpl"),
 	}
 	if err := util.CreateEmptyFiles(tmpPaths); err != nil {
 		t.Fatal(err)
@@ -39,9 +40,9 @@ func TestHtmlTemplatesPathMatch(t *testing.T) {
 	// Only some paths are expected to be matched by the HtmlTemplatesCompiler,
 	// the other files should be ignored.
 	expectedPaths := []string{
-		root + "/index.tmpl",
-		root + "/pages/about.tmpl",
-		root + "/more_pages/other_stuff/page.tmpl",
+		filepath.Join(root, "index.tmpl"),
+		filepath.Join(root, "pages", "about.tmpl"),
+		filepath.Join(root, "more_pages", "other_stuff", "page.tmpl"),
 	}
 
 	// Use the MatchFunc to find all the paths
@@ -58,7 +59,7 @@ func TestHtmlTemplatesPathMatch(t *testing.T) {
 func TestHtmlTemplatesCompile(t *testing.T) {
 	// Create a root path where all of our test files for this
 	// test will live
-	root := "/tmp/test_html_templates_compiler"
+	root := string(os.PathSeparator) + filepath.Join("tmp", "test_html_templates_compiler")
 	defer func() {
 		// Remove everything after we're done
 		if err := os.RemoveAll(root); err != nil {
@@ -69,22 +70,22 @@ func TestHtmlTemplatesCompile(t *testing.T) {
 	}()
 
 	// Copy some files from test_files to source directory in the temp root
-	testFilesDir := os.Getenv("GOPATH") + "/src/github.com/albrow/scribble/test_files/html_templates"
-	srcDir := root + "/source"
-	destDir := root + "/public"
-	if err := util.RecursiveCopy(testFilesDir+"/source", srcDir); err != nil {
+	testFilesDir := filepath.Join(os.Getenv("GOPATH"), "src", "github.com", "albrow", "scribble", "test_files", "html_templates")
+	srcDir := filepath.Join(root, "source")
+	destDir := filepath.Join(root, "public")
+	if err := util.RecursiveCopy(filepath.Join(testFilesDir, "source"), srcDir); err != nil {
 		t.Fatal(err)
 	}
 
 	// Attempt to compile the html template files
-	config.SourceDir = root + "/source"
-	config.DestDir = root + "/public"
-	config.LayoutsDir = config.SourceDir + "/_layouts"
-	if err := HtmlTemplatesCompiler.Compile(srcDir + "/index.tmpl"); err != nil {
+	config.SourceDir = filepath.Join(root, "source")
+	config.DestDir = filepath.Join(root, "public")
+	config.LayoutsDir = filepath.Join(config.SourceDir, "_layouts")
+	if err := HtmlTemplatesCompiler.Compile(filepath.Join(srcDir, "index.tmpl")); err != nil {
 		t.Fatal(err)
 	}
 
 	// Make sure the compiled result is correct
-	expectedDir := testFilesDir + "/public"
-	test_util.CheckFilesMatch(t, expectedDir+"/index.html", destDir+"/index.html")
+	expectedDir := filepath.Join(testFilesDir, "public")
+	test_util.CheckFilesMatch(t, filepath.Join(expectedDir, "index.html"), filepath.Join(destDir, "index.html"))
 }
