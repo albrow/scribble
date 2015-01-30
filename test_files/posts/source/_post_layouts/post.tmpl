@@ -1,0 +1,6 @@
+{{ define "content" }}
+<h1>{{ .Post.Title }}</h1>
+<div id="content">
+{{ .Post.Content }}
+</div>
+{{ end }}{{ template "base.tmpl" . }}

@@ -1,4 +1,10 @@
-package lib
+package util
+
+// NOTE: many functions having to do with navigating and printing
+// out useful information from the stack are borrowed from
+// https://github.com/go-martini/martini/blob/master/recovery.go,
+// which is licensed under the MIT License and copyrighted by
+// Jeremy Saenz
 
 import (
 	"bytes"
@@ -9,6 +15,9 @@ import (
 
 var fullStackTrace = false
 
+// Recovery can be used to catch panics and turn them into errors.
+// Recovery will not halt the program, though it does not guarantee
+// that the program won't be halted for other reasons.
 func Recovery() {
 	if err := recover(); err != nil {
 		// convert err to a string
@@ -23,7 +32,7 @@ func Recovery() {
 		_, file, line, _ := runtime.Caller(2)
 
 		// Log the error and the line number
-		chimeError(errMsg)
+		ChimeError(errMsg)
 		fmt.Printf("    Originated from %s:%d\n", file, line)
 
 		// get the stack traces and print it out

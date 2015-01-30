@@ -1,13 +1,16 @@
 package main
 
 import (
-	"github.com/albrow/scribble/lib"
+	"fmt"
+	"github.com/albrow/scribble/util"
 	"gopkg.in/alecthomas/kingpin.v1"
 	"os"
 )
 
 var (
 	app = kingpin.New("scribble", "A tiny static blog generator written in go.")
+
+	versionCmd = app.Command("version", "Display version information and then quit.")
 
 	serveCmd  = app.Command("serve", "Compile and serve the site.")
 	servePort = serveCmd.Flag("port", "The port on which to serve the site.").Short('p').Default("4000").Int()
@@ -17,23 +20,28 @@ var (
 )
 
 const (
-	version = "0.0.1"
+	version = "0.1.0"
 )
 
 func main() {
-	defer lib.Recovery()
-	kingpin.Version(version)
+	// catch panics and print them out as errors
+	defer util.Recovery()
+
+	// Parse the command line arguments and flags and delegate
+	// to the appropriate functions.
 	cmd, err := app.Parse(os.Args[1:])
 	if err != nil {
 		app.Usage(os.Stdout)
 		os.Exit(0)
 	}
 	switch cmd {
+	case versionCmd.FullCommand():
+		fmt.Println("scribble version:", version)
 	case compileCmd.FullCommand():
-		lib.Compile(*compileWatch)
+		compile(*compileWatch)
 	case serveCmd.FullCommand():
-		lib.Compile(true)
-		lib.Serve(*servePort)
+		compile(true)
+		serve(*servePort)
 	default:
 		app.Usage(os.Stdout)
 		os.Exit(0)

@@ -1,6 +1,8 @@
 Scribble
 ========
 
+Version: 0.1.0
+
 A tiny static blog generator written in go.
 
 This isn't quite ready yet. I'm still planning to add some pretty crucial features,
@@ -20,7 +22,7 @@ static blog made up of html, css, and js. It uses:
 - Markdown for writting posts
 - Toml for frontmatter and configuration
 - Sass for styling
-- Ace for html templates.
+- Standard go html templates for pages
 
 Scribble is highly optimized for speed. It uses sassc (a C port of the sass compiler). It
 also features watching/livereload and only recompiles the necessary files. The result of this
@@ -36,5 +38,5 @@ Why?
 I didn't build Scribble because I thought the world needed another static blog generator
 (there are some fantastic ones out there already!). I built it because I wanted practice
 working with generated files with go, and because I wanted to use my favorite markup
-languages and preprocessors (sass, ace, toml, markdown). I built it for myself. Because
+languages and preprocessors (sass, toml, markdown). I built it for myself. Because
 of this, Scribble is pretty opinionated and might not make sense for everyone.
