@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
+	"github.com/albrow/scribble/compilers"
 	"github.com/albrow/scribble/config"
-	"github.com/albrow/scribble/generators"
 	"github.com/albrow/scribble/util"
 	"os"
 	"path/filepath"
@@ -20,7 +20,7 @@ func compile(watch bool) {
 	if err := removeAllOld(); err != nil {
 		panic(err)
 	}
-	if err := generators.CompileAll(); err != nil {
+	if err := compilers.CompileAll(); err != nil {
 		util.ChimeError(err)
 	}
 	if watch {

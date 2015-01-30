@@ -1,4 +1,4 @@
-package generators
+package compilers
 
 import (
 	"github.com/albrow/scribble/config"
@@ -8,10 +8,10 @@ import (
 	"testing"
 )
 
-func TestSassPathMatch(t *testing.T) {
+func TestAcePathMatch(t *testing.T) {
 	// Create a root path where all of our test files for this
 	// test will live
-	root := "/tmp/sass_compiler"
+	root := "/tmp/test_ace_compiler_paths"
 	defer func() {
 		// Remove everything after we're done
 		if err := os.RemoveAll(root); err != nil {
@@ -23,29 +23,28 @@ func TestSassPathMatch(t *testing.T) {
 
 	// Create a few files.
 	tmpPaths := []string{
-		root + "/styles/main.scss",
-		root + "/styles/_colors.scss",
-		root + "/styles/_body.scss",
-		root + "/styles/notice.txt",
-		root + "/styles/README",
-		root + "/_sass/main.scss",
-		root + "/.sass/main.scss",
-		root + "/more_sass/other_stuff/this.scss",
+		root + "/index.ace",
+		root + "/_layouts/base.ace",
+		root + "/_includes/greet.ace",
+		root + "/ace/notice.txt",
+		root + "/ace/README",
+		root + "/.templates/base.ace",
+		root + "/more/other_stuff/this.ace",
 	}
 	if err := util.CreateEmptyFiles(tmpPaths); err != nil {
 		t.Fatal(err)
 	}
 
-	// Only some paths are expected to be matched by the SassCompiler,
+	// Only some paths are expected to be matched by the AceCompiler,
 	// the other files should be ignored.
 	expectedPaths := []string{
-		root + "/styles/main.scss",
-		root + "/more_sass/other_stuff/this.scss",
+		root + "/index.ace",
+		root + "/more/other_stuff/this.ace",
 	}
 
 	// Use the MatchFunc to find all the paths
 	config.SourceDir = root
-	gotPaths, err := FindPaths(SassCompiler.CompileMatchFunc())
+	gotPaths, err := FindPaths(AceCompiler.CompileMatchFunc())
 	if err != nil {
 		t.Error(err)
 	}
@@ -54,10 +53,11 @@ func TestSassPathMatch(t *testing.T) {
 	test_util.CheckStringsMatch(t, expectedPaths, gotPaths)
 }
 
-func TestSassCompile(t *testing.T) {
+func TestAceCompile(t *testing.T) {
+	t.Skip("Skipping Ace Compiler test. Going to switch to std html/template soon.")
 	// Create a root path where all of our test files for this
 	// test will live
-	root := "/tmp/test_sass_compiler"
+	root := "/tmp/test_ace_compiler"
 	defer func() {
 		// Remove everything after we're done
 		if err := os.RemoveAll(root); err != nil {
@@ -68,21 +68,22 @@ func TestSassCompile(t *testing.T) {
 	}()
 
 	// Copy some files from test_files to source directory in the temp root
-	testFilesDir := os.Getenv("GOPATH") + "/src/github.com/albrow/scribble/test_files/sass"
+	testFilesDir := os.Getenv("GOPATH") + "/src/github.com/albrow/scribble/test_files/ace"
 	srcDir := root + "/source"
 	destDir := root + "/public"
 	if err := util.RecursiveCopy(testFilesDir+"/source", srcDir); err != nil {
 		t.Fatal(err)
 	}
 
-	// Attempt to compile the sass files
-	config.SourceDir = root + "/source"
-	config.DestDir = root + "/public"
-	if err := SassCompiler.Compile(srcDir + "/styles/main.scss"); err != nil {
+	// Attempt to compile the ace files
+	config.LayoutsDir = "_layouts"
+	config.SourceDir = srcDir
+	config.DestDir = destDir
+	if err := AceCompiler.Compile(srcDir + "/index.ace"); err != nil {
 		t.Fatal(err)
 	}
 
 	// Make sure the compiled result is correct
 	expectedDir := testFilesDir + "/public"
-	test_util.CheckFilesMatch(t, expectedDir+"/styles/main.css", destDir+"/styles/main.css")
+	test_util.CheckFilesMatch(t, expectedDir+"/index.html", destDir+"/index.html")
 }

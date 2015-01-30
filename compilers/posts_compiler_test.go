@@ -1,4 +1,4 @@
-package generators
+package compilers
 
 import (
 	"github.com/albrow/scribble/config"
@@ -8,10 +8,10 @@ import (
 	"testing"
 )
 
-func TestAcePathMatch(t *testing.T) {
+func TestPostsPathMatch(t *testing.T) {
 	// Create a root path where all of our test files for this
 	// test will live
-	root := "/tmp/test_ace_compiler_paths"
+	root := "/tmp/posts_compiler_paths"
 	defer func() {
 		// Remove everything after we're done
 		if err := os.RemoveAll(root); err != nil {
@@ -23,28 +23,27 @@ func TestAcePathMatch(t *testing.T) {
 
 	// Create a few files.
 	tmpPaths := []string{
-		root + "/index.ace",
-		root + "/_layouts/base.ace",
-		root + "/_includes/greet.ace",
-		root + "/ace/notice.txt",
-		root + "/ace/README",
-		root + "/.templates/base.ace",
-		root + "/more/other_stuff/this.ace",
+		root + "/_posts/post.md",
+		root + "/_posts/post.ace",
+		root + "/_posts/README",
+		root + "/other_dir/post.md",
 	}
 	if err := util.CreateEmptyFiles(tmpPaths); err != nil {
 		t.Fatal(err)
 	}
 
-	// Only some paths are expected to be matched by the AceCompiler,
+	// Only some paths are expected to be matched by the PostsCompiler,
 	// the other files should be ignored.
+	config.SourceDir = root
+	config.PostsDir = "_posts"
+	PostsCompiler.Init()
 	expectedPaths := []string{
-		root + "/index.ace",
-		root + "/more/other_stuff/this.ace",
+		root + "/_posts/post.md",
 	}
 
 	// Use the MatchFunc to find all the paths
 	config.SourceDir = root
-	gotPaths, err := FindPaths(AceCompiler.CompileMatchFunc())
+	gotPaths, err := FindPaths(PostsCompiler.CompileMatchFunc())
 	if err != nil {
 		t.Error(err)
 	}
@@ -53,10 +52,10 @@ func TestAcePathMatch(t *testing.T) {
 	test_util.CheckStringsMatch(t, expectedPaths, gotPaths)
 }
 
-func TestAceCompile(t *testing.T) {
+func testPostsCompiler(t *testing.T) {
 	// Create a root path where all of our test files for this
 	// test will live
-	root := "/tmp/test_ace_compiler"
+	root := "/tmp/test_posts_compiler"
 	defer func() {
 		// Remove everything after we're done
 		if err := os.RemoveAll(root); err != nil {
@@ -67,22 +66,24 @@ func TestAceCompile(t *testing.T) {
 	}()
 
 	// Copy some files from test_files to source directory in the temp root
-	testFilesDir := os.Getenv("GOPATH") + "/src/github.com/albrow/scribble/test_files/ace"
+	testFilesDir := os.Getenv("GOPATH") + "/src/github.com/albrow/scribble/test_files/posts"
 	srcDir := root + "/source"
 	destDir := root + "/public"
 	if err := util.RecursiveCopy(testFilesDir+"/source", srcDir); err != nil {
 		t.Fatal(err)
 	}
 
-	// Attempt to compile the ace files
+	// Attempt to compile the posts
+	config.SourceDir = root
+	config.PostsDir = "_posts"
 	config.LayoutsDir = "_layouts"
-	config.SourceDir = srcDir
-	config.DestDir = destDir
-	if err := AceCompiler.Compile(srcDir + "/index.ace"); err != nil {
+	config.ViewsDir = "_views"
+	config.DestDir = root + "/public"
+	if err := PostsCompiler.Compile(root + "_posts/post.md"); err != nil {
 		t.Fatal(err)
 	}
 
 	// Make sure the compiled result is correct
 	expectedDir := testFilesDir + "/public"
-	test_util.CheckFilesMatch(t, expectedDir+"/index.html", destDir+"/index.html")
+	test_util.CheckFilesMatch(t, expectedDir+"/post/index.html", destDir+"/post/index.html")
 }

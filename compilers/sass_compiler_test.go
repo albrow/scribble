@@ -1,4 +1,4 @@
-package generators
+package compilers
 
 import (
 	"github.com/albrow/scribble/config"
@@ -8,10 +8,10 @@ import (
 	"testing"
 )
 
-func TestPostsPathMatch(t *testing.T) {
+func TestSassPathMatch(t *testing.T) {
 	// Create a root path where all of our test files for this
 	// test will live
-	root := "/tmp/posts_compiler_paths"
+	root := "/tmp/sass_compiler"
 	defer func() {
 		// Remove everything after we're done
 		if err := os.RemoveAll(root); err != nil {
@@ -23,27 +23,29 @@ func TestPostsPathMatch(t *testing.T) {
 
 	// Create a few files.
 	tmpPaths := []string{
-		root + "/_posts/post.md",
-		root + "/_posts/post.ace",
-		root + "/_posts/README",
-		root + "/other_dir/post.md",
+		root + "/styles/main.scss",
+		root + "/styles/_colors.scss",
+		root + "/styles/_body.scss",
+		root + "/styles/notice.txt",
+		root + "/styles/README",
+		root + "/_sass/main.scss",
+		root + "/.sass/main.scss",
+		root + "/more_sass/other_stuff/this.scss",
 	}
 	if err := util.CreateEmptyFiles(tmpPaths); err != nil {
 		t.Fatal(err)
 	}
 
-	// Only some paths are expected to be matched by the PostsCompiler,
+	// Only some paths are expected to be matched by the SassCompiler,
 	// the other files should be ignored.
-	config.SourceDir = root
-	config.PostsDir = "_posts"
-	PostsCompiler.Init()
 	expectedPaths := []string{
-		root + "/_posts/post.md",
+		root + "/styles/main.scss",
+		root + "/more_sass/other_stuff/this.scss",
 	}
 
 	// Use the MatchFunc to find all the paths
 	config.SourceDir = root
-	gotPaths, err := FindPaths(PostsCompiler.CompileMatchFunc())
+	gotPaths, err := FindPaths(SassCompiler.CompileMatchFunc())
 	if err != nil {
 		t.Error(err)
 	}
@@ -52,10 +54,10 @@ func TestPostsPathMatch(t *testing.T) {
 	test_util.CheckStringsMatch(t, expectedPaths, gotPaths)
 }
 
-func testPostsCompiler(t *testing.T) {
+func TestSassCompile(t *testing.T) {
 	// Create a root path where all of our test files for this
 	// test will live
-	root := "/tmp/test_posts_compiler"
+	root := "/tmp/test_sass_compiler"
 	defer func() {
 		// Remove everything after we're done
 		if err := os.RemoveAll(root); err != nil {
@@ -66,24 +68,21 @@ func testPostsCompiler(t *testing.T) {
 	}()
 
 	// Copy some files from test_files to source directory in the temp root
-	testFilesDir := os.Getenv("GOPATH") + "/src/github.com/albrow/scribble/test_files/posts"
+	testFilesDir := os.Getenv("GOPATH") + "/src/github.com/albrow/scribble/test_files/sass"
 	srcDir := root + "/source"
 	destDir := root + "/public"
 	if err := util.RecursiveCopy(testFilesDir+"/source", srcDir); err != nil {
 		t.Fatal(err)
 	}
 
-	// Attempt to compile the posts
-	config.SourceDir = root
-	config.PostsDir = "_posts"
-	config.LayoutsDir = "_layouts"
-	config.ViewsDir = "_views"
+	// Attempt to compile the sass files
+	config.SourceDir = root + "/source"
 	config.DestDir = root + "/public"
-	if err := PostsCompiler.Compile(root + "_posts/post.md"); err != nil {
+	if err := SassCompiler.Compile(srcDir + "/styles/main.scss"); err != nil {
 		t.Fatal(err)
 	}
 
 	// Make sure the compiled result is correct
 	expectedDir := testFilesDir + "/public"
-	test_util.CheckFilesMatch(t, expectedDir+"/post/index.html", destDir+"/post/index.html")
+	test_util.CheckFilesMatch(t, expectedDir+"/styles/main.css", destDir+"/styles/main.css")
 }

@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 	"github.com/OneOfOne/xxhash/native"
+	"github.com/albrow/scribble/compilers"
 	"github.com/albrow/scribble/config"
-	"github.com/albrow/scribble/generators"
 	"github.com/albrow/scribble/util"
 	"github.com/howeyc/fsnotify"
 	"io"
@@ -78,7 +78,7 @@ func createWatcher() (*fsnotify.Watcher, error) {
 				if changed, err := fileDidChange(ev.Name); err != nil {
 					panic(err)
 				} else if changed {
-					generators.FileChanged(ev.Name, *ev)
+					compilers.FileChanged(ev.Name, *ev)
 				}
 			case err := <-watcher.Error:
 				panic(err)

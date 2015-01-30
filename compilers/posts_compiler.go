@@ -1,4 +1,4 @@
-package generators
+package compilers
 
 import (
 	"bufio"
