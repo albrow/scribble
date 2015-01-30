@@ -42,6 +42,8 @@ type Post struct {
 	src string `toml:"-"`
 	// the layout tmpl file to be used for the post
 	Layout string `toml:"layout"`
+	// the html template that can be used to render the post
+	template *template.Template
 }
 
 var (
@@ -100,19 +102,11 @@ func (p PostsCompilerType) Compile(srcPath string) error {
 	if err := post.parse(); err != nil {
 		return err
 	}
-	layout := "post.tmpl"
-	if post.Layout != "" {
-		layout = post.Layout
-	}
 
-	// Get and compile the template with the right context
-	tmpl, err := postTemplate()
-	if err != nil {
-		return err
-	}
+	// Write to destFile by executing the template
 	postContext := context.CopyContext()
 	postContext["Post"] = post
-	if err := tmpl.ExecuteTemplate(destFile, layout, postContext); err != nil {
+	if err := post.template.Execute(destFile, postContext); err != nil {
 		return fmt.Errorf("ERROR compiling html template for posts: %s", err.Error())
 	}
 	return nil
@@ -174,42 +168,51 @@ func getOrCreatePostFromPath(path string) *Post {
 }
 
 // parse reads from the source file and sets the content and metadata fields
-// for the post
+// for the post. It also creates a new template for the post using the layout
+// field of the frontmatter.
 func (p *Post) parse() error {
-	// open the source file
+	// Open the source file
 	file, err := os.Open(p.src)
 	if err != nil {
 		return err
 	}
 	r := bufio.NewReader(file)
 
-	// split the file into frontmatter and markdown content
+	// Split the file into frontmatter and markdown content
 	frontMatter, content, err := util.SplitFrontMatter(r)
 	if err != nil {
 		return err
 	}
 
-	// decode the frontmatter
+	// Decode the frontmatter
 	if _, err := toml.Decode(frontMatter, p); err != nil {
 		return err
 	}
 
-	// parse the markdown content and set p.Content
+	// Parse the markdown content and set p.Content
 	p.Content = template.HTML(blackfriday.MarkdownCommon([]byte(content)))
-	return nil
-}
 
-// postTemplate returns an html template which is to be used for rendering all posts.
-// The template returned has parsed all the layouts in the layouts directory. You can
-// change which layout is actually executed by using the ExecuteTemplate method and passing
-// in post.layout.
-func postTemplate() (*template.Template, error) {
-	// Create the tmpl file by parsing all the templates
-	tmpl := template.New("post_template")
-	if _, err := tmpl.ParseGlob(filepath.Join(config.LayoutsDir, "*.tmpl")); err != nil {
-		return nil, err
+	// Create a template for the post
+	postLayout := "post.tmpl"
+	if p.Layout != "" {
+		postLayout = p.Layout
 	}
-	return tmpl, nil
+
+	// When we call template.ParseFiles, we want the post layout file to be first,
+	// so it is the one that will be executed.
+	postLayoutFile := filepath.Join(config.PostLayoutsDir, postLayout)
+	otherLayoutFiles, err := filepath.Glob(filepath.Join(config.LayoutsDir, "*.tmpl"))
+	if err != nil {
+		return err
+	}
+	allFiles := append([]string{postLayoutFile}, otherLayoutFiles...)
+	tmpl, err := template.ParseFiles(allFiles...)
+	if err != nil {
+		return err
+	}
+	p.template = tmpl
+
+	return nil
 }
 
 // The PostsByDate type is used only for sorting

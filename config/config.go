@@ -8,7 +8,7 @@ import (
 
 // a list of config vars
 var (
-	SourceDir, DestDir, PostsDir, LayoutsDir, ViewsDir string
+	SourceDir, DestDir, PostsDir, LayoutsDir, PostLayoutsDir string
 )
 
 // Parse reads and parses config.toml, setting the values
@@ -21,11 +21,11 @@ func Parse() {
 		panic(msg)
 	}
 	vars := map[string]*string{
-		"sourceDir":  &SourceDir,
-		"destDir":    &DestDir,
-		"postsDir":   &PostsDir,
-		"layoutsDir": &LayoutsDir,
-		"viewsDir":   &ViewsDir,
+		"sourceDir":      &SourceDir,
+		"destDir":        &DestDir,
+		"layoutsDir":     &LayoutsDir,
+		"postsDir":       &PostsDir,
+		"postLayoutsDir": &PostLayoutsDir,
 	}
 	setConfig(vars, context.GetContext())
 }

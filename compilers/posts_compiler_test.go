@@ -78,6 +78,7 @@ func TestPostsCompiler(t *testing.T) {
 	config.SourceDir = filepath.Join(root, "source")
 	config.PostsDir = filepath.Join(config.SourceDir, "_posts")
 	config.LayoutsDir = filepath.Join(config.SourceDir, "_layouts")
+	config.PostLayoutsDir = filepath.Join(config.SourceDir, "_post_layouts")
 	config.DestDir = filepath.Join(root, "public")
 	if err := PostsCompiler.Compile(filepath.Join(config.PostsDir, "post.md")); err != nil {
 		t.Fatal(err)
