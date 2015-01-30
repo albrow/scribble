@@ -52,7 +52,8 @@ func TestPostsPathMatch(t *testing.T) {
 	test_util.CheckStringsMatch(t, expectedPaths, gotPaths)
 }
 
-func testPostsCompiler(t *testing.T) {
+func TestPostsCompiler(t *testing.T) {
+	t.Skip("Skipping TestPostsCompiler until template rewriting is complete.")
 	// Create a root path where all of our test files for this
 	// test will live
 	root := "/tmp/test_posts_compiler"

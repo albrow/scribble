@@ -54,3 +54,37 @@ func TestHtmlTemplatesPathMatch(t *testing.T) {
 	// Check that the paths we get are correct
 	test_util.CheckStringsMatch(t, expectedPaths, gotPaths)
 }
+
+func TestHtmlTemplatesCompile(t *testing.T) {
+	// Create a root path where all of our test files for this
+	// test will live
+	root := "/tmp/test_html_templates_compiler"
+	defer func() {
+		// Remove everything after we're done
+		if err := os.RemoveAll(root); err != nil {
+			if !os.IsNotExist(err) {
+				panic(err)
+			}
+		}
+	}()
+
+	// Copy some files from test_files to source directory in the temp root
+	testFilesDir := os.Getenv("GOPATH") + "/src/github.com/albrow/scribble/test_files/html_templates"
+	srcDir := root + "/source"
+	destDir := root + "/public"
+	if err := util.RecursiveCopy(testFilesDir+"/source", srcDir); err != nil {
+		t.Fatal(err)
+	}
+
+	// Attempt to compile the html template files
+	config.SourceDir = root + "/source"
+	config.DestDir = root + "/public"
+	config.LayoutsDir = config.SourceDir + "/_layouts"
+	if err := HtmlTemplatesCompiler.Compile(srcDir + "/index.tmpl"); err != nil {
+		t.Fatal(err)
+	}
+
+	// Make sure the compiled result is correct
+	expectedDir := testFilesDir + "/public"
+	test_util.CheckFilesMatch(t, expectedDir+"/index.html", destDir+"/index.html")
+}
