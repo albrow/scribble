@@ -7,6 +7,7 @@ import (
 	"github.com/albrow/scribble/config"
 	"github.com/albrow/scribble/util"
 	"github.com/howeyc/fsnotify"
+	"github.com/wsxiaoys/terminal/color"
 	"io"
 	"os"
 	"path/filepath"
@@ -28,6 +29,7 @@ var fileHashes = map[string][]byte{}
 // to any changes.
 func watchAll() {
 	fmt.Println("--> watching for changes")
+	color.Println("@y    WARNING: watching doesn't work yet!")
 	if watcher == nil {
 		var err error
 		watcher, err = createWatcher()
