@@ -1,9 +1,11 @@
 package generators
 
 import (
+	"fmt"
 	"github.com/albrow/scribble/config"
 	"github.com/albrow/scribble/util"
 	"github.com/howeyc/fsnotify"
+	"github.com/wsxiaoys/terminal/color"
 	"os"
 	"path/filepath"
 	"strings"
@@ -22,6 +24,11 @@ var CompilerPaths = map[Compiler][]string{}
 
 // UnmatchedPaths is a slice of paths which do not match any compiler
 var UnmatchedPaths = []string{}
+
+// noHiddenNoIgnore is a MatchFunc which returns true for any path that is
+// does not begin with a "." or "_" and is not inside any directory which begins
+// with a "." or "_".
+var noHiddenNoIgnore = filenameMatchFunc("*", true, true)
 
 // MatchFunc represents a function which should return true iff
 // path matches some pattern. Compilers and Watchers return a MatchFunc
@@ -86,7 +93,7 @@ func FindPaths(mf MatchFunc) ([]string, error) {
 // it will be copied to config.DestDir directly.
 func CompileAll() error {
 	initCompilers()
-	if err := delegatePaths(); err != nil {
+	if err := delegateCompilePaths(); err != nil {
 		return err
 	}
 	for _, c := range Compilers {
@@ -103,6 +110,31 @@ func CompileAll() error {
 	return nil
 }
 
+// FileChanged delegates file changes to the appropriate compiler. If srcPath does not match any
+// Compiler, it will be copied to config.DestDir directly.
+func FileChanged(srcPath string, ev fsnotify.FileEvent) error {
+	hasMatch := false
+	for _, c := range Compilers {
+		if match, err := c.WatchMatchFunc()(srcPath); err != nil {
+			return err
+		} else if match {
+			hasMatch = true
+			color.Printf("@y    CHANGED: %s\n", ev.Name)
+			c.FileChanged(srcPath, ev)
+		}
+	}
+	if !hasMatch {
+		// srcPath did not match any Compiler
+		if match, err := noHiddenNoIgnore(srcPath); err != nil {
+			return err
+		} else if match {
+			color.Printf("@y    CHANGED: %s\n", ev.Name)
+			fmt.Printf("Unmatched path: %s\n", srcPath)
+		}
+	}
+	return nil
+}
+
 // initCompilers calls the Init method for each compiler that has it
 func initCompilers() {
 	for _, c := range Compilers {
@@ -114,10 +146,10 @@ func initCompilers() {
 	}
 }
 
-// delegatePaths walks through the source directory, checks if a path matches according
+// delegateCompilePaths walks through the source directory, checks if a path matches according
 // to the MatchFunc for each compiler, and adds the path to CompilerPaths if it does
 // match.
-func delegatePaths() error {
+func delegateCompilePaths() error {
 	return filepath.Walk(config.SourceDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err

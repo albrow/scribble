@@ -23,9 +23,9 @@ func compile(watch bool) {
 	if err := generators.CompileAll(); err != nil {
 		util.ChimeError(err)
 	}
-	// if watch {
-	// 	watchAll()
-	// }
+	if watch {
+		watchAll()
+	}
 }
 
 func createDestDir() error {

@@ -122,7 +122,9 @@ func (p PostsCompilerType) CompileAll(srcPaths []string) error {
 }
 
 func (p PostsCompilerType) FileChanged(srcPath string, ev fsnotify.FileEvent) error {
-	return fmt.Errorf("FileChanged not yet implemented!")
+	fmt.Printf("PostsCompiler registering change to %s\n", srcPath)
+	fmt.Printf("%+v\n", ev)
+	return nil
 }
 
 // Posts returns up to limit posts. If limit is 0, it returns

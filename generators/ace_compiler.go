@@ -108,5 +108,7 @@ func (a AceCompilerType) CompileAll(srcPaths []string) error {
 }
 
 func (a AceCompilerType) FileChanged(srcPath string, ev fsnotify.FileEvent) error {
-	return fmt.Errorf("FileChanged not yet implemented!")
+	fmt.Printf("AceCompiler registering change to %s\n", srcPath)
+	fmt.Printf("%+v\n", ev)
+	return nil
 }

@@ -31,7 +31,7 @@ func (s SassCompilerType) CompileMatchFunc() MatchFunc {
 // but including those that start with an underscore, since they may
 // be imported in other files.
 func (s SassCompilerType) WatchMatchFunc() MatchFunc {
-	return filenameMatchFunc("*.scss", true, true)
+	return filenameMatchFunc("*.scss", true, false)
 }
 
 // Compile compiles the file at srcPath. The caller will only
@@ -78,5 +78,7 @@ func (s SassCompilerType) CompileAll(srcPaths []string) error {
 }
 
 func (s SassCompilerType) FileChanged(srcPath string, ev fsnotify.FileEvent) error {
-	return fmt.Errorf("FileChanged not yet implemented!")
+	fmt.Printf("SassCompiler registering change to %s\n", srcPath)
+	fmt.Printf("%+v\n", ev)
+	return nil
 }

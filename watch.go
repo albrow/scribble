@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"github.com/OneOfOne/xxhash/native"
 	"github.com/albrow/scribble/config"
+	"github.com/albrow/scribble/generators"
 	"github.com/albrow/scribble/util"
 	"github.com/howeyc/fsnotify"
-	"github.com/wsxiaoys/terminal/color"
 	"io"
 	"os"
 	"path/filepath"
@@ -75,16 +75,10 @@ func createWatcher() (*fsnotify.Watcher, error) {
 		for {
 			select {
 			case ev := <-watcher.Event:
-				base := filepath.Base(ev.Name)
-				if base[0] == '.' {
-					// ignore hidden system files
-					continue
-				}
 				if changed, err := fileDidChange(ev.Name); err != nil {
 					panic(err)
 				} else if changed {
-					color.Printf("@y    CHANGED: %s\n", ev.Name)
-					// TODO: rewrite this
+					generators.FileChanged(ev.Name, *ev)
 				}
 			case err := <-watcher.Error:
 				panic(err)
