@@ -115,7 +115,13 @@ func (c HtmlTemplatesCompilerType) Compile(srcPath string) error {
 // responsible for only passing in files that belong to HtmlTemplatesCompiler
 // according to the MatchFunc. Behavior for any other file is undefined.
 func (c HtmlTemplatesCompilerType) CompileAll(srcPaths []string) error {
-	return fmt.Errorf("HtmlTemplatesCompilerType.CompileAll not yet implemented!")
+	fmt.Println("--> compiling go html templates...")
+	for _, srcPath := range srcPaths {
+		if err := c.Compile(srcPath); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (c HtmlTemplatesCompilerType) FileChanged(srcPath string, ev fsnotify.FileEvent) error {
