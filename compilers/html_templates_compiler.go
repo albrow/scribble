@@ -90,13 +90,13 @@ func (c HtmlTemplatesCompilerType) Compile(srcPath string) error {
 
 	// Create the template by parsing the raw content. Then parse all the layout files and add context.FuncMap
 	tmpl := template.New(filepath.Base(srcPath))
+	tmpl.Funcs(context.FuncMap)
 	if _, err := tmpl.Parse(content); err != nil {
 		return err
 	}
 	if _, err := tmpl.ParseGlob(filepath.Join(config.LayoutsDir, "*.tmpl")); err != nil {
 		return err
 	}
-	tmpl.Funcs(context.FuncMap)
 
 	// Create and write to the destination file
 	destFile, err := util.CreateFileWithPath(destPath)
