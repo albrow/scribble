@@ -174,9 +174,14 @@ func delegateCompilePaths() error {
 		}
 		if !matched && !info.IsDir() {
 			// If the path didn't match any compilers according to their MatchFuncs,
-			// add it to the list of unmatched paths. These will be copied from config.SourceDir
+			// it isn't a dir, and it is not a hidden or ignored file, add it to the
+			// list of unmatched paths. These will be copied from config.SourceDir
 			// to config.DestDir without being changed.
-			UnmatchedPaths = append(UnmatchedPaths, path)
+			if match, err := noHiddenNoIgnore(path); err != nil {
+				return err
+			} else if match {
+				UnmatchedPaths = append(UnmatchedPaths, path)
+			}
 		}
 		return nil
 	})
