@@ -136,8 +136,39 @@ func (p PostsCompilerType) CompileAll(srcPaths []string) error {
 }
 
 func (p PostsCompilerType) FileChanged(srcPath string, ev fsnotify.FileEvent) error {
-	fmt.Printf("PostsCompiler registering change to %s\n", srcPath)
-	fmt.Printf("%+v\n", ev)
+	// Because of the way we set up the watcher, there are two possible
+	// cases here.
+	// 1) A template in the post layouts dir was changed. In this case,
+	// we would ideally recompile all the posts that used that layout.
+	// 2) A markdown file corresponding to a single post was changed. In this
+	// case, ideally we only recompile the post that was changed. We need to
+	// take into account any rename, delete, or create events and how they
+	// affect the output files in destDir.
+	switch filepath.Ext(srcPath) {
+	case ".md":
+		// TODO: Be more intelligent here? If a single post file was midified,
+		// we can simply recompile that post. We would also need to take into
+		// account the subtle differences between rename, create, and delete
+		// events. For now, recompile all posts.
+		paths, err := FindPaths(p.CompileMatchFunc())
+		if err != nil {
+			return err
+		}
+		if err := p.CompileAll(paths); err != nil {
+			return err
+		}
+	case ".tmpl":
+		// TODO: Analyze post files and be more intelligent here?
+		// When a post layout changes, only recompile the posts that
+		// use that layout. For now, recompile all posts.
+		paths, err := FindPaths(p.CompileMatchFunc())
+		if err != nil {
+			return err
+		}
+		if err := p.CompileAll(paths); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

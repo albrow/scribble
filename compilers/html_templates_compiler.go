@@ -136,7 +136,16 @@ func (c HtmlTemplatesCompilerType) CompileAll(srcPaths []string) error {
 }
 
 func (c HtmlTemplatesCompilerType) FileChanged(srcPath string, ev fsnotify.FileEvent) error {
-	fmt.Printf("HtmlTemplatesCompiler registering change to %s\n", srcPath)
-	fmt.Printf("%+v\n", ev)
+	// TODO: Analyze template files and be more intelligent here?
+	// If a single file was changed, only recompile that file. If a
+	// layout file was changed, recompile all the files that use that
+	// layout. For now, just recompile all html templates.
+	paths, err := FindPaths(c.CompileMatchFunc())
+	if err != nil {
+		return err
+	}
+	if err := c.CompileAll(paths); err != nil {
+		return err
+	}
 	return nil
 }
