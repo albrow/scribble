@@ -281,3 +281,61 @@ func matchWalkFunc(paths *[]string, matchFunc func(path string) (bool, error)) f
 		return nil
 	}
 }
+
+// intersectMatchFuncs returns a MatchFunc which is functionally equivalent to the
+// intersection of each MatchFunc in funcs. That is, it returns true iff each and
+// every MatchFunc in funcs returns true.
+func intersectMatchFuncs(funcs ...MatchFunc) MatchFunc {
+	return func(path string) (bool, error) {
+		for _, f := range funcs {
+			if match, err := f(path); err != nil {
+				return false, err
+			} else if !match {
+				return false, nil
+			}
+		}
+		return true, nil
+	}
+}
+
+// unionMatchFuncs returns a MatchFunc which is functionally equivalent to the
+// union of each MatchFunc in funcs. That is, it returns true iff at least one MatchFunc
+// in funcs returns true.
+func unionMatchFuncs(funcs ...MatchFunc) MatchFunc {
+	return func(path string) (bool, error) {
+		for _, f := range funcs {
+			if match, err := f(path); err != nil {
+				return false, err
+			} else if match {
+				return true, nil
+			}
+		}
+		return false, nil
+	}
+}
+
+// excludeMatchFuncs returns a MatchFunc which returns true iff f returns true
+// and no function in excludes returns true. It allows you to match with a simple
+// function f but exclude the path if it matches some other pattern.
+func excludeMatchFuncs(f MatchFunc, excludes ...MatchFunc) MatchFunc {
+	return func(path string) (bool, error) {
+		if firstMatch, err := f(path); err != nil {
+			return false, err
+		} else if !firstMatch {
+			// If it doesn't match f, always return false
+			return false, nil
+		}
+		// If it does match f, check each MatchFunc in excludes
+		for _, exclude := range excludes {
+			if excludeMatch, err := exclude(path); err != nil {
+				return false, err
+			} else if excludeMatch {
+				// if path matches any MatchFunc in excludes, we should
+				// exclude it. i.e., return false
+				return false, nil
+			}
+		}
+		// For all other cases, return true
+		return true, nil
+	}
+}

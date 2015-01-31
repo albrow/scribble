@@ -37,7 +37,18 @@ func (c HtmlTemplatesCompilerType) CompileMatchFunc() MatchFunc {
 // but including those that start with an underscore, since they may
 // be imported in other files.
 func (c HtmlTemplatesCompilerType) WatchMatchFunc() MatchFunc {
-	return filenameMatchFunc("*.tmpl", true, false)
+	// HtmlTemplatesCompiler should watch all *tmpl files except for
+	// those which are in the postsLayout dir. When those are changed,
+	// they only affect posts, so we don't need to recompile any other
+	// html template files.
+	htmlTemplatesMatch := filenameMatchFunc("*tmpl", true, false)
+	postLayoutsMatch := pathMatchFunc(filepath.Join(config.PostLayoutsDir, "*.tmpl"), true, false)
+	// excludeMatchFuncs lets us express these conditions easily. It
+	// returns a MatchFunc which will return true iff the path represents
+	// and html template *and* is *not* in the post layouts dir. I.e., if
+	// a .tmpl file is in the post layouts dir, it will return false and
+	// HtmlTemplatesCompiler will not be alerted when those files change.
+	return excludeMatchFuncs(htmlTemplatesMatch, postLayoutsMatch)
 }
 
 // Init should be called before any other methods. In this case, Init
