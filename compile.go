@@ -11,7 +11,7 @@ import (
 
 // compile compiles all the contents of config.SourceDir and puts the compiled
 // result in config.DestDir.
-func compile(watch bool, done chan bool) {
+func compile(watch bool) {
 	config.Parse()
 	fmt.Println("--> compiling")
 	if err := createDestDir(); err != nil {
@@ -25,8 +25,6 @@ func compile(watch bool, done chan bool) {
 	}
 	if watch {
 		watchAll()
-	} else {
-		done <- true
 	}
 }
 

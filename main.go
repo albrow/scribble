@@ -38,14 +38,16 @@ func main() {
 	case versionCmd.FullCommand():
 		fmt.Println("scribble version:", version)
 	case compileCmd.FullCommand():
-		done := make(chan bool)
-		compile(*compileWatch, done)
-		<-done
+		compile(*compileWatch)
+		if *compileWatch {
+			// If the watch flag was provided, don't exit.
+			// User will need to quit manually, e.g. with ctrl+c
+			done := make(chan bool)
+			<-done
+		}
 	case serveCmd.FullCommand():
-		done := make(chan bool)
-		compile(true, done)
+		compile(true)
 		serve(*servePort)
-		<-done
 	default:
 		app.Usage(os.Stdout)
 		os.Exit(0)
