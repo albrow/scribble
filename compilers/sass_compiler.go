@@ -78,7 +78,15 @@ func (s SassCompilerType) CompileAll(srcPaths []string) error {
 }
 
 func (s SassCompilerType) FileChanged(srcPath string, ev fsnotify.FileEvent) error {
-	fmt.Printf("SassCompiler registering change to %s\n", srcPath)
-	fmt.Printf("%+v\n", ev)
+	// TODO: Analyze sass files and be more intelligent here?
+	// Only recompile the file at srcPath and any files that import it?
+	// For now, just recompile all sass.
+	paths, err := FindPaths(s.CompileMatchFunc())
+	if err != nil {
+		return err
+	}
+	if err := s.CompileAll(paths); err != nil {
+		return err
+	}
 	return nil
 }

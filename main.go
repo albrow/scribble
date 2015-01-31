@@ -38,10 +38,14 @@ func main() {
 	case versionCmd.FullCommand():
 		fmt.Println("scribble version:", version)
 	case compileCmd.FullCommand():
-		compile(*compileWatch)
+		done := make(chan bool)
+		compile(*compileWatch, done)
+		<-done
 	case serveCmd.FullCommand():
-		compile(true)
+		done := make(chan bool)
+		compile(true, done)
 		serve(*servePort)
+		<-done
 	default:
 		app.Usage(os.Stdout)
 		os.Exit(0)

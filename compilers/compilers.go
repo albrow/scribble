@@ -97,15 +97,24 @@ func CompileAll() error {
 		return err
 	}
 	for _, c := range Compilers {
-		paths, found := CompilerPaths[c]
-		if found && len(paths) > 0 {
-			if err := c.CompileAll(paths); err != nil {
-				return err
-			}
+		if err := compileAllForCompiler(c); err != nil {
+			return err
 		}
 	}
 	if err := copyUnmatchedPaths(UnmatchedPaths); err != nil {
 		return err
+	}
+	return nil
+}
+
+// compileAllForCompiler recompiles all paths that are matched according to the given compiler's
+// MatchFunc
+func compileAllForCompiler(c Compiler) error {
+	paths, found := CompilerPaths[c]
+	if found && len(paths) > 0 {
+		if err := c.CompileAll(paths); err != nil {
+			return err
+		}
 	}
 	return nil
 }
