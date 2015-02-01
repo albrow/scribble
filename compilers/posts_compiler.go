@@ -81,14 +81,21 @@ func (p *PostsCompilerType) CompileMatchFunc() MatchFunc {
 func (p *PostsCompilerType) WatchMatchFunc() MatchFunc {
 	// PostsCompiler needs to watch all posts in the posts dir,
 	// but also needs to watch all the *tmpl files in the posts
-	// layouts dir, because if those change, it affects the way
-	// posts are rendered.
+	// layouts dir, layouts dir, and includes dir. Because if those
+	// change, it may affect the way posts are rendered.
 	postsMatch := pathMatchFunc(p.pathMatch, true, false)
+	layoutsMatch := pathMatchFunc(filepath.Join(config.LayoutsDir, "*.tmpl"), true, false)
 	postLayoutsMatch := pathMatchFunc(filepath.Join(config.PostLayoutsDir, "*.tmpl"), true, false)
 	// unionMatchFuncs combines these two cases and returns a MatchFunc
 	// which will return true if either matches. This allows us to watch
 	// for changes in both the posts dir and the posts layouts dir.
-	return unionMatchFuncs(postsMatch, postLayoutsMatch)
+	allMatch := unionMatchFuncs(postsMatch, layoutsMatch, postLayoutsMatch)
+	if config.IncludesDir != "" {
+		// We also want to watch includes if there are any
+		includesMatch := pathMatchFunc(filepath.Join(config.IncludesDir, "*.tmpl"), true, false)
+		allMatch = unionMatchFuncs(allMatch, includesMatch)
+	}
+	return allMatch
 }
 
 // Compile compiles the file at srcPath. The caller will only
