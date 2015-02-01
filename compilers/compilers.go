@@ -155,6 +155,20 @@ func initCompilers() {
 	}
 }
 
+// recompileAllForCompiler first finds all the paths that match the given compiler
+// (in case something changed since the last time we found the paths) and then compiles
+// all of them with a call to CompileAll.
+func recompileAllForCompiler(c Compiler) error {
+	paths, err := FindPaths(c.CompileMatchFunc())
+	if err != nil {
+		return err
+	}
+	if err := c.CompileAll(paths); err != nil {
+		return err
+	}
+	return nil
+}
+
 // delegateCompilePaths walks through the source directory, checks if a path matches according
 // to the MatchFunc for each compiler, and adds the path to CompilerPaths if it does
 // match.

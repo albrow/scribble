@@ -150,24 +150,18 @@ func (p PostsCompilerType) FileChanged(srcPath string, ev fsnotify.FileEvent) er
 		// we can simply recompile that post. We would also need to take into
 		// account the subtle differences between rename, create, and delete
 		// events. For now, recompile all posts.
-		paths, err := FindPaths(p.CompileMatchFunc())
-		if err != nil {
+		if err := recompileAllForCompiler(p); err != nil {
 			return err
 		}
-		if err := p.CompileAll(paths); err != nil {
-			return err
-		}
+		return nil
 	case ".tmpl":
 		// TODO: Analyze post files and be more intelligent here?
 		// When a post layout changes, only recompile the posts that
 		// use that layout. For now, recompile all posts.
-		paths, err := FindPaths(p.CompileMatchFunc())
-		if err != nil {
+		if err := recompileAllForCompiler(p); err != nil {
 			return err
 		}
-		if err := p.CompileAll(paths); err != nil {
-			return err
-		}
+		return nil
 	}
 	return nil
 }

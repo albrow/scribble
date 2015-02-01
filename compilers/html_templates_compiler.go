@@ -140,11 +140,7 @@ func (c HtmlTemplatesCompilerType) FileChanged(srcPath string, ev fsnotify.FileE
 	// If a single file was changed, only recompile that file. If a
 	// layout file was changed, recompile all the files that use that
 	// layout. For now, just recompile all html templates.
-	paths, err := FindPaths(c.CompileMatchFunc())
-	if err != nil {
-		return err
-	}
-	if err := c.CompileAll(paths); err != nil {
+	if err := recompileAllForCompiler(c); err != nil {
 		return err
 	}
 	return nil
