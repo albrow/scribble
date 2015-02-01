@@ -44,7 +44,7 @@ func (c *HtmlTemplatesCompilerType) WatchMatchFunc() MatchFunc {
 	// those which are in the postsLayout dir. When those are changed,
 	// they only affect posts, so we don't need to recompile any other
 	// html template files.
-	htmlTemplatesMatch := filenameMatchFunc("*tmpl", true, false)
+	htmlTemplatesMatch := filenameMatchFunc("*.tmpl", true, false)
 	postLayoutsMatch := pathMatchFunc(filepath.Join(config.PostLayoutsDir, "*.tmpl"), true, false)
 	// excludeMatchFuncs lets us express these conditions easily. It
 	// returns a MatchFunc which will return true iff the path represents
