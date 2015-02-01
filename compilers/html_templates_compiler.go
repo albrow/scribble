@@ -18,6 +18,9 @@ import (
 // HtmlTemplatesCompilerType represents a type capable of compiling go html template files.
 type HtmlTemplatesCompilerType struct {
 	layoutFiles []string
+	// createdFiles is a slice of file paths which were created by this
+	// compiler. It is important for implementing the RemoveOld method.
+	createdFiles []string
 }
 
 // HtmlTemplatesCompiler is an instatiation of HtmlTemplatesCompilerType
@@ -27,7 +30,7 @@ var HtmlTemplatesCompiler = HtmlTemplatesCompilerType{}
 // any files which match a given pattern. In this case, the pattern
 // is any file that ends in ".tmpl", excluding hidden and ignored
 // files and directories.
-func (c HtmlTemplatesCompilerType) CompileMatchFunc() MatchFunc {
+func (c *HtmlTemplatesCompilerType) CompileMatchFunc() MatchFunc {
 	return filenameMatchFunc("*.tmpl", true, true)
 }
 
@@ -36,7 +39,7 @@ func (c HtmlTemplatesCompilerType) CompileMatchFunc() MatchFunc {
 // is any file that ends in ".tmpl", excluding hidden files and directories,
 // but including those that start with an underscore, since they may
 // be imported in other files.
-func (c HtmlTemplatesCompilerType) WatchMatchFunc() MatchFunc {
+func (c *HtmlTemplatesCompilerType) WatchMatchFunc() MatchFunc {
 	// HtmlTemplatesCompiler should watch all *tmpl files except for
 	// those which are in the postsLayout dir. When those are changed,
 	// they only affect posts, so we don't need to recompile any other
@@ -67,7 +70,7 @@ func (c *HtmlTemplatesCompilerType) Init() {
 // according to the MatchFunc. Behavior for any other file is
 // undefined. Compile will output the compiled result to the appropriate
 // location in config.DestDir.
-func (c HtmlTemplatesCompilerType) Compile(srcPath string) error {
+func (c *HtmlTemplatesCompilerType) Compile(srcPath string) error {
 	// parse path and figure out destPath
 	destPath := strings.Replace(srcPath, ".tmpl", ".html", 1)
 	destPath = strings.Replace(destPath, config.SourceDir, config.DestDir, 1)
@@ -118,6 +121,9 @@ func (c HtmlTemplatesCompilerType) Compile(srcPath string) error {
 		return err
 	}
 
+	// Add the created file to the list of created files
+	c.createdFiles = append(c.createdFiles, destPath)
+
 	return nil
 }
 
@@ -125,7 +131,7 @@ func (c HtmlTemplatesCompilerType) Compile(srcPath string) error {
 // It works simply by calling Compile for each path. The caller is
 // responsible for only passing in files that belong to HtmlTemplatesCompiler
 // according to the MatchFunc. Behavior for any other file is undefined.
-func (c HtmlTemplatesCompilerType) CompileAll(srcPaths []string) error {
+func (c *HtmlTemplatesCompilerType) CompileAll(srcPaths []string) error {
 	fmt.Println("--> compiling go html templates...")
 	for _, srcPath := range srcPaths {
 		if err := c.Compile(srcPath); err != nil {
@@ -135,13 +141,23 @@ func (c HtmlTemplatesCompilerType) CompileAll(srcPaths []string) error {
 	return nil
 }
 
-func (c HtmlTemplatesCompilerType) FileChanged(srcPath string, ev fsnotify.FileEvent) error {
+func (c *HtmlTemplatesCompilerType) FileChanged(srcPath string, ev fsnotify.FileEvent) error {
 	// TODO: Analyze template files and be more intelligent here?
 	// If a single file was changed, only recompile that file. If a
 	// layout file was changed, recompile all the files that use that
 	// layout. For now, just recompile all html templates.
 	if err := recompileAllForCompiler(c); err != nil {
 		return err
+	}
+	return nil
+}
+
+func (c *HtmlTemplatesCompilerType) RemoveOld() error {
+	// Simply iterate through createdFiles and remove each of them
+	for _, path := range c.createdFiles {
+		if err := util.RemoveIfExists(path); err != nil {
+			return err
+		}
 	}
 	return nil
 }

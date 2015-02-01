@@ -20,6 +20,9 @@ import (
 // PostsCompilerType represents a type capable of compiling post files.
 type PostsCompilerType struct {
 	pathMatch string
+	// createdDirs keeps track of the directories that were created in config.DestDir.
+	// It is used in the RemoveOld method.
+	createdDirs []string
 }
 
 // PostCompiler is an instatiation of PostCompilerType
@@ -67,14 +70,14 @@ func (p *PostsCompilerType) Init() {
 // is any file that is inside config.PostsDir and ends in ".md", excluding
 // hidden files and directories (which start with a ".") but not those
 // which start with an underscore.
-func (p PostsCompilerType) CompileMatchFunc() MatchFunc {
+func (p *PostsCompilerType) CompileMatchFunc() MatchFunc {
 	return pathMatchFunc(p.pathMatch, true, false)
 }
 
 // WatchMatchFunc returns a MatchFunc which will return true for
 // any files which match a given pattern. In this case, the pattern
 // is the same as it is for CompileMatchFunc.
-func (p PostsCompilerType) WatchMatchFunc() MatchFunc {
+func (p *PostsCompilerType) WatchMatchFunc() MatchFunc {
 	// PostsCompiler needs to watch all posts in the posts dir,
 	// but also needs to watch all the *tmpl files in the posts
 	// layouts dir, because if those change, it affects the way
@@ -92,7 +95,7 @@ func (p PostsCompilerType) WatchMatchFunc() MatchFunc {
 // according to the MatchFunc. Behavior for any other file is
 // undefined. Compile will output the compiled result to the appropriate
 // location in config.DestDir.
-func (p PostsCompilerType) Compile(srcPath string) error {
+func (p *PostsCompilerType) Compile(srcPath string) error {
 	// Get the parsed post object and determine dest path
 	post := getOrCreatePostFromPath(srcPath)
 	srcFilename := filepath.Base(srcPath)
@@ -118,6 +121,10 @@ func (p PostsCompilerType) Compile(srcPath string) error {
 	if err := post.template.Execute(destFile, postContext); err != nil {
 		return fmt.Errorf("ERROR compiling html template for posts: %s", err.Error())
 	}
+
+	// Add the created dir to the list of created dirs
+	p.createdDirs = append(p.createdDirs, destPath)
+
 	return nil
 }
 
@@ -125,7 +132,7 @@ func (p PostsCompilerType) Compile(srcPath string) error {
 // It works simply by calling Compile for each path. The caller is
 // responsible for only passing in files that belong to AceCompiler
 // according to the MatchFunc. Behavior for any other file is undefined.
-func (p PostsCompilerType) CompileAll(srcPaths []string) error {
+func (p *PostsCompilerType) CompileAll(srcPaths []string) error {
 	fmt.Println("--> compiling posts")
 	for _, srcPath := range srcPaths {
 		if err := p.Compile(srcPath); err != nil {
@@ -135,7 +142,7 @@ func (p PostsCompilerType) CompileAll(srcPaths []string) error {
 	return nil
 }
 
-func (p PostsCompilerType) FileChanged(srcPath string, ev fsnotify.FileEvent) error {
+func (p *PostsCompilerType) FileChanged(srcPath string, ev fsnotify.FileEvent) error {
 	// Because of the way we set up the watcher, there are two possible
 	// cases here.
 	// 1) A template in the post layouts dir was changed. In this case,
@@ -162,6 +169,20 @@ func (p PostsCompilerType) FileChanged(srcPath string, ev fsnotify.FileEvent) er
 			return err
 		}
 		return nil
+	}
+	return nil
+}
+
+func (p *PostsCompilerType) RemoveOld() error {
+	// Simply iterate through createdDirs and remove each of them
+	// NOTE: this is different from the other compilers because each
+	// post gets created as an index.html file inside some directory
+	// (for prettier urls). So instead of removing files, we're removing
+	// directories.
+	for _, dir := range p.createdDirs {
+		if err := util.RemoveAllIfExists(dir); err != nil {
+			return err
+		}
 	}
 	return nil
 }

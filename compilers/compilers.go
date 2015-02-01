@@ -62,6 +62,11 @@ type Compiler interface {
 	// srcPaths will be all paths that match according to
 	// the MatchFunc for the Compiler.
 	CompileAll(srcPaths []string) error
+	// RemoveAllOld removes all files which this compiler has created
+	// in config.DestDir. A Compiler is responsible for keeping track
+	// of the files it has created and removing them when this method
+	// is called.
+	RemoveOld() error
 	// WatchMatchFunc returns a MatchFunc which will be applied
 	// to every path in config.SourceDir to determine which paths
 	// a Compiler is responsible for watching. Note that the files
@@ -155,10 +160,14 @@ func initCompilers() {
 	}
 }
 
-// recompileAllForCompiler first finds all the paths that match the given compiler
-// (in case something changed since the last time we found the paths) and then compiles
-// all of them with a call to CompileAll.
+// recompileAllForCompiler calls RemoveOld to remove any old files the compiiler may have
+// created in config.DestDir. Then it finds all the paths that match the given compiler
+// (in case something changed since the last time we found the paths). Finally it compiles
+// all of the matching files with a call to CompileAll.
 func recompileAllForCompiler(c Compiler) error {
+	if err := c.RemoveOld(); err != nil {
+		return err
+	}
 	paths, err := FindPaths(c.CompileMatchFunc())
 	if err != nil {
 		return err
