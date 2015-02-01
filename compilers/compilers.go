@@ -162,17 +162,25 @@ func initCompilers() {
 
 // recompileAllForCompiler calls RemoveOld to remove any old files the compiiler may have
 // created in config.DestDir. Then it finds all the paths that match the given compiler
-// (in case something changed since the last time we found the paths). Finally it compiles
-// all of the matching files with a call to CompileAll.
+// (in case something changed since the last time we found the paths). Next, it compiles
+// all of the matching files with a call to CompileAll. Finally, it removes any empty
+// directories that may still be in config.DestDir.
 func recompileAllForCompiler(c Compiler) error {
+	// Have the compiler remove any files it may have created
 	if err := c.RemoveOld(); err != nil {
 		return err
 	}
+	// Find all the paths again for the given compiler (in case something changed)
 	paths, err := FindPaths(c.CompileMatchFunc())
 	if err != nil {
 		return err
 	}
+	// Compile all the paths
 	if err := c.CompileAll(paths); err != nil {
+		return err
+	}
+	// Cleanup by removing any empty dirs from config.DestDir
+	if err := util.RemoveEmptyDirs(config.DestDir); err != nil {
 		return err
 	}
 	return nil

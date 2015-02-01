@@ -105,3 +105,42 @@ func RemoveIfExists(path string) error {
 	}
 	return nil
 }
+
+// RemoveEmptyDirs recursively iterates through path and removes any empty
+// directories within it.
+func RemoveEmptyDirs(path string) error {
+	return filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			// Open the directory to see if it's empty
+			file, err := os.Open(path)
+			if err != nil {
+				switch err {
+				case os.ErrNotExist:
+					// If the directory we were going to maybe delete doesn't exist
+					// anymore, that's fine
+					return nil
+				default:
+					// If there was some other error, return it
+					return err
+				}
+			}
+
+			if _, err := file.Readdirnames(1); err != nil {
+				switch err {
+				case io.EOF:
+					// This means the directory has no files, we need to delete it
+					if err := RemoveAllIfExists(path); err != nil {
+						return err
+					}
+				default:
+					// If there was some other error, return it
+					return err
+				}
+			}
+		}
+		return nil
+	})
+}
