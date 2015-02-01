@@ -79,3 +79,29 @@ func CreateEmptyFiles(paths []string) error {
 	}
 	return nil
 }
+
+// RemoveAllIfExists removes the directory identified by path if it exists.
+// If it does not exist, calling this function has no effect. Contrary to
+// the default behavior in the os package, RemoveAllIfExists will not return
+// an error if path does not exist.
+func RemoveAllIfExists(path string) error {
+	if err := os.RemoveAll(path); err != nil {
+		if !os.IsNotExist(err) {
+			return err
+		}
+	}
+	return nil
+}
+
+// RemoveIfExists removes the file identified by path if it exists. If it
+// does not exist, calling this function has no effect. Contrary to the
+// default behavior in the os package, RemoveIfExists will not return an
+// error if path does not exist.
+func RemoveIfExists(path string) error {
+	if err := os.Remove(path); err != nil {
+		if !os.IsNotExist(err) {
+			return err
+		}
+	}
+	return nil
+}

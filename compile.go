@@ -52,12 +52,8 @@ func removeAllOld() error {
 			return nil
 		} else if info.IsDir() {
 			// remove the dir and everything in it
-			if err := os.RemoveAll(path); err != nil {
-				if !os.IsNotExist(err) {
-					// if the dir was already removed, that's fine.
-					// if there was some other error, return it
-					return err
-				}
+			if err := util.RemoveAllIfExists(path); err != nil {
+				return err
 			}
 			return filepath.SkipDir
 		} else {

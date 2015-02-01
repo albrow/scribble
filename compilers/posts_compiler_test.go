@@ -15,10 +15,8 @@ func TestPostsPathMatch(t *testing.T) {
 	root := string(os.PathSeparator) + filepath.Join("tmp", "posts_compiler_paths")
 	defer func() {
 		// Remove everything after we're done
-		if err := os.RemoveAll(root); err != nil {
-			if !os.IsNotExist(err) {
-				panic(err)
-			}
+		if err := util.RemoveAllIfExists(root); err != nil {
+			panic(err)
 		}
 	}()
 
@@ -59,10 +57,8 @@ func TestPostsCompiler(t *testing.T) {
 	root := string(os.PathSeparator) + filepath.Join("tmp", "test_posts_compiler")
 	defer func() {
 		// Remove everything after we're done
-		if err := os.RemoveAll(root); err != nil {
-			if !os.IsNotExist(err) {
-				panic(err)
-			}
+		if err := util.RemoveAllIfExists(root); err != nil {
+			panic(err)
 		}
 	}()
 
