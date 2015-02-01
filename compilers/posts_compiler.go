@@ -260,6 +260,14 @@ func (p *Post) parse() error {
 		return err
 	}
 	allFiles := append([]string{postLayoutFile}, otherLayoutFiles...)
+	// Parse the includes files if there are any
+	if config.IncludesDir != "" {
+		includeFiles, err := filepath.Glob(filepath.Join(config.IncludesDir, "*tmpl"))
+		if err != nil {
+			return err
+		}
+		allFiles = append(allFiles, includeFiles...)
+	}
 	tmpl, err := template.ParseFiles(allFiles...)
 	if err != nil {
 		return err

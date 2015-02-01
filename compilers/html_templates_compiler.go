@@ -102,14 +102,25 @@ func (c *HtmlTemplatesCompilerType) Compile(srcPath string) error {
 		return fmt.Errorf("Could not convert frontmatter key layout of type %T to string!", layoutKey)
 	}
 
-	// Create the template by parsing the raw content. Then parse all the layout files and add context.FuncMap
+	// Create the template by parsing the raw content. Then parse all the layout files, include files, and add context.FuncMap
 	tmpl := template.New(filepath.Base(srcPath))
 	tmpl.Funcs(context.FuncMap)
 	if _, err := tmpl.Parse(content); err != nil {
 		return err
 	}
-	if _, err := tmpl.ParseGlob(filepath.Join(config.LayoutsDir, "*.tmpl")); err != nil {
-		return err
+	if config.LayoutsDir != "" {
+		if _, err := tmpl.ParseGlob(filepath.Join(config.LayoutsDir, "*.tmpl")); err != nil {
+			return err
+		}
+	} else {
+		// config.LayoutsDir is more or less required. Every page must have a layout
+		return fmt.Errorf("Missing required config variable: layoutsDir. Please add it to config.toml.")
+	}
+	if config.IncludesDir != "" {
+		// config.IncludesDir, on the other hand, is optional. You don't have to use includes.
+		if _, err := tmpl.ParseGlob(filepath.Join(config.IncludesDir, "*.tmpl")); err != nil {
+			return err
+		}
 	}
 
 	// Create and write to the destination file

@@ -8,7 +8,7 @@ import (
 
 // a list of config vars
 var (
-	SourceDir, DestDir, PostsDir, LayoutsDir, PostLayoutsDir string
+	SourceDir, DestDir, PostsDir, LayoutsDir, PostLayoutsDir, IncludesDir string
 )
 
 // Parse reads and parses config.toml, setting the values
@@ -26,6 +26,7 @@ func Parse() {
 		"layoutsDir":     &LayoutsDir,
 		"postsDir":       &PostsDir,
 		"postLayoutsDir": &PostLayoutsDir,
+		"includesDir":    &IncludesDir,
 	}
 	setConfig(vars, context.GetContext())
 }
