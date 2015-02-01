@@ -134,6 +134,10 @@ func calculateHashForPath(path string) ([]byte, bool, error) {
 		}
 	}
 	io.Copy(h, f)
+	if h.Size() == 0 {
+		// The file existed, but it was empty
+		return nil, true, nil
+	}
 	result := h.Sum(nil)
 	return result, true, nil
 }
