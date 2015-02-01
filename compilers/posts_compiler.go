@@ -13,6 +13,7 @@ import (
 	"html/template"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 )
@@ -187,14 +188,20 @@ func (p *PostsCompilerType) RemoveOld() error {
 	return nil
 }
 
-// Posts returns up to limit posts. If limit is 0, it returns
-// all posts. If limit is greater than len(posts), it returns
+// Posts returns up to limit posts, sorted by date. If limit is 0,
+// it returns all posts. If limit is greater than len(posts), it returns
 // all posts.
 func Posts(limit ...int) []*Post {
-	if len(limit) == 0 || limit[0] == 0 || limit[0] > len(posts) {
-		return posts
+	// Sort the posts by date
+	sortedPosts := make([]*Post, len(posts))
+	copy(sortedPosts, posts)
+	sort.Sort(PostsByDate(sortedPosts))
+
+	// Return up to limit posts
+	if len(limit) == 0 || limit[0] == 0 || limit[0] > len(sortedPosts) {
+		return sortedPosts
 	} else {
-		return posts[:limit[0]]
+		return sortedPosts[:limit[0]]
 	}
 }
 
