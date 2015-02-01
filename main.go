@@ -20,7 +20,7 @@ var (
 )
 
 const (
-	version = "0.1.0"
+	version = "0.2.0"
 )
 
 func main() {
@@ -39,6 +39,12 @@ func main() {
 		fmt.Println("scribble version:", version)
 	case compileCmd.FullCommand():
 		compile(*compileWatch)
+		if *compileWatch {
+			// If the watch flag was provided, don't exit.
+			// User will need to quit manually, e.g. with ctrl+c
+			done := make(chan bool)
+			<-done
+		}
 	case serveCmd.FullCommand():
 		compile(true)
 		serve(*servePort)

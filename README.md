@@ -1,7 +1,7 @@
 Scribble
 ========
 
-Version: 0.1.0
+Version: 0.2.0
 
 A tiny static blog generator written in go.
 

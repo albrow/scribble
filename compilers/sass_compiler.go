@@ -3,6 +3,7 @@ package compilers
 import (
 	"fmt"
 	"github.com/albrow/scribble/config"
+	"github.com/albrow/scribble/util"
 	"github.com/howeyc/fsnotify"
 	"github.com/wsxiaoys/terminal/color"
 	"os"
@@ -12,7 +13,11 @@ import (
 )
 
 // SassCompilerType represents a type capable of compiling sass files.
-type SassCompilerType struct{}
+type SassCompilerType struct {
+	// createdFiles is a slice of file paths which were created by this
+	// compiler. It is important for implementing the RemoveOld method.
+	createdFiles []string
+}
 
 // SassCompiler is an instatiation of SassCompilerType
 var SassCompiler = SassCompilerType{}
@@ -21,7 +26,7 @@ var SassCompiler = SassCompilerType{}
 // any files which match a given pattern. In this case, the pattern
 // is any file that ends in ".scss", excluding hidden and ignored
 // files and directories.
-func (s SassCompilerType) CompileMatchFunc() MatchFunc {
+func (s *SassCompilerType) CompileMatchFunc() MatchFunc {
 	return filenameMatchFunc("*.scss", true, true)
 }
 
@@ -30,7 +35,7 @@ func (s SassCompilerType) CompileMatchFunc() MatchFunc {
 // is any file that ends in ".scss", excluding hidden files and directories,
 // but including those that start with an underscore, since they may
 // be imported in other files.
-func (s SassCompilerType) WatchMatchFunc() MatchFunc {
+func (s *SassCompilerType) WatchMatchFunc() MatchFunc {
 	return filenameMatchFunc("*.scss", true, false)
 }
 
@@ -39,7 +44,7 @@ func (s SassCompilerType) WatchMatchFunc() MatchFunc {
 // according to the MatchFunc. Behavior for any other file is
 // undefined. Compile will output the compiled result to the appropriate
 // location in config.DestDir.
-func (s SassCompilerType) Compile(srcPath string) error {
+func (s *SassCompilerType) Compile(srcPath string) error {
 	// parse path and figure out destPath
 	destPath := strings.Replace(srcPath, ".scss", ".css", 1)
 	destPath = strings.Replace(destPath, config.SourceDir, config.DestDir, 1)
@@ -60,6 +65,10 @@ func (s SassCompilerType) Compile(srcPath string) error {
 	if err != nil {
 		return fmt.Errorf("ERROR compiling sass: %s", string(response))
 	}
+
+	// Add destPath to the list of created files
+	s.createdFiles = append(s.createdFiles, destPath)
+
 	return nil
 }
 
@@ -67,7 +76,7 @@ func (s SassCompilerType) Compile(srcPath string) error {
 // It works simply by calling Compile for each path. The caller is
 // responsible for only passing in files that belong to SassCompiler
 // according to the MatchFunc. Behavior for any other file is undefined.
-func (s SassCompilerType) CompileAll(srcPaths []string) error {
+func (s *SassCompilerType) CompileAll(srcPaths []string) error {
 	fmt.Println("--> compiling sass")
 	for _, srcPath := range srcPaths {
 		if err := s.Compile(srcPath); err != nil {
@@ -77,8 +86,22 @@ func (s SassCompilerType) CompileAll(srcPaths []string) error {
 	return nil
 }
 
-func (s SassCompilerType) FileChanged(srcPath string, ev fsnotify.FileEvent) error {
-	fmt.Printf("SassCompiler registering change to %s\n", srcPath)
-	fmt.Printf("%+v\n", ev)
+func (s *SassCompilerType) FileChanged(srcPath string, ev fsnotify.FileEvent) error {
+	// TODO: Analyze sass files and be more intelligent here?
+	// Only recompile the file at srcPath and any files that import it?
+	// For now, just recompile all sass.
+	if err := recompileAllForCompiler(s); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SassCompilerType) RemoveOld() error {
+	// Simply iterate through createdFiles and remove each of them
+	for _, path := range s.createdFiles {
+		if err := util.RemoveIfExists(path); err != nil {
+			return err
+		}
+	}
 	return nil
 }

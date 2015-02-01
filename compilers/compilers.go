@@ -62,6 +62,11 @@ type Compiler interface {
 	// srcPaths will be all paths that match according to
 	// the MatchFunc for the Compiler.
 	CompileAll(srcPaths []string) error
+	// RemoveAllOld removes all files which this compiler has created
+	// in config.DestDir. A Compiler is responsible for keeping track
+	// of the files it has created and removing them when this method
+	// is called.
+	RemoveOld() error
 	// WatchMatchFunc returns a MatchFunc which will be applied
 	// to every path in config.SourceDir to determine which paths
 	// a Compiler is responsible for watching. Note that the files
@@ -97,15 +102,24 @@ func CompileAll() error {
 		return err
 	}
 	for _, c := range Compilers {
-		paths, found := CompilerPaths[c]
-		if found && len(paths) > 0 {
-			if err := c.CompileAll(paths); err != nil {
-				return err
-			}
+		if err := compileAllForCompiler(c); err != nil {
+			return err
 		}
 	}
 	if err := copyUnmatchedPaths(UnmatchedPaths); err != nil {
 		return err
+	}
+	return nil
+}
+
+// compileAllForCompiler recompiles all paths that are matched according to the given compiler's
+// MatchFunc
+func compileAllForCompiler(c Compiler) error {
+	paths, found := CompilerPaths[c]
+	if found && len(paths) > 0 {
+		if err := c.CompileAll(paths); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -146,6 +160,32 @@ func initCompilers() {
 	}
 }
 
+// recompileAllForCompiler calls RemoveOld to remove any old files the compiiler may have
+// created in config.DestDir. Then it finds all the paths that match the given compiler
+// (in case something changed since the last time we found the paths). Next, it compiles
+// all of the matching files with a call to CompileAll. Finally, it removes any empty
+// directories that may still be in config.DestDir.
+func recompileAllForCompiler(c Compiler) error {
+	// Have the compiler remove any files it may have created
+	if err := c.RemoveOld(); err != nil {
+		return err
+	}
+	// Find all the paths again for the given compiler (in case something changed)
+	paths, err := FindPaths(c.CompileMatchFunc())
+	if err != nil {
+		return err
+	}
+	// Compile all the paths
+	if err := c.CompileAll(paths); err != nil {
+		return err
+	}
+	// Cleanup by removing any empty dirs from config.DestDir
+	if err := util.RemoveEmptyDirs(config.DestDir); err != nil {
+		return err
+	}
+	return nil
+}
+
 // delegateCompilePaths walks through the source directory, checks if a path matches according
 // to the MatchFunc for each compiler, and adds the path to CompilerPaths if it does
 // match.
@@ -165,9 +205,14 @@ func delegateCompilePaths() error {
 		}
 		if !matched && !info.IsDir() {
 			// If the path didn't match any compilers according to their MatchFuncs,
-			// add it to the list of unmatched paths. These will be copied from config.SourceDir
+			// it isn't a dir, and it is not a hidden or ignored file, add it to the
+			// list of unmatched paths. These will be copied from config.SourceDir
 			// to config.DestDir without being changed.
-			UnmatchedPaths = append(UnmatchedPaths, path)
+			if match, err := noHiddenNoIgnore(path); err != nil {
+				return err
+			} else if match {
+				UnmatchedPaths = append(UnmatchedPaths, path)
+			}
 		}
 		return nil
 	})
@@ -265,5 +310,63 @@ func matchWalkFunc(paths *[]string, matchFunc func(path string) (bool, error)) f
 			// fmt.Printf("%s does not match %s\n", path, pattern)
 		}
 		return nil
+	}
+}
+
+// intersectMatchFuncs returns a MatchFunc which is functionally equivalent to the
+// intersection of each MatchFunc in funcs. That is, it returns true iff each and
+// every MatchFunc in funcs returns true.
+func intersectMatchFuncs(funcs ...MatchFunc) MatchFunc {
+	return func(path string) (bool, error) {
+		for _, f := range funcs {
+			if match, err := f(path); err != nil {
+				return false, err
+			} else if !match {
+				return false, nil
+			}
+		}
+		return true, nil
+	}
+}
+
+// unionMatchFuncs returns a MatchFunc which is functionally equivalent to the
+// union of each MatchFunc in funcs. That is, it returns true iff at least one MatchFunc
+// in funcs returns true.
+func unionMatchFuncs(funcs ...MatchFunc) MatchFunc {
+	return func(path string) (bool, error) {
+		for _, f := range funcs {
+			if match, err := f(path); err != nil {
+				return false, err
+			} else if match {
+				return true, nil
+			}
+		}
+		return false, nil
+	}
+}
+
+// excludeMatchFuncs returns a MatchFunc which returns true iff f returns true
+// and no function in excludes returns true. It allows you to match with a simple
+// function f but exclude the path if it matches some other pattern.
+func excludeMatchFuncs(f MatchFunc, excludes ...MatchFunc) MatchFunc {
+	return func(path string) (bool, error) {
+		if firstMatch, err := f(path); err != nil {
+			return false, err
+		} else if !firstMatch {
+			// If it doesn't match f, always return false
+			return false, nil
+		}
+		// If it does match f, check each MatchFunc in excludes
+		for _, exclude := range excludes {
+			if excludeMatch, err := exclude(path); err != nil {
+				return false, err
+			} else if excludeMatch {
+				// if path matches any MatchFunc in excludes, we should
+				// exclude it. i.e., return false
+				return false, nil
+			}
+		}
+		// For all other cases, return true
+		return true, nil
 	}
 }

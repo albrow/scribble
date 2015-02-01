@@ -15,10 +15,8 @@ func TestHtmlTemplatesPathMatch(t *testing.T) {
 	root := string(os.PathSeparator) + filepath.Join("tmp", "html_templates_compiler_paths")
 	defer func() {
 		// Remove everything after we're done
-		if err := os.RemoveAll(root); err != nil {
-			if !os.IsNotExist(err) {
-				panic(err)
-			}
+		if err := util.RemoveAllIfExists(root); err != nil {
+			panic(err)
 		}
 	}()
 
@@ -62,10 +60,8 @@ func TestHtmlTemplatesCompile(t *testing.T) {
 	root := string(os.PathSeparator) + filepath.Join("tmp", "test_html_templates_compiler")
 	defer func() {
 		// Remove everything after we're done
-		if err := os.RemoveAll(root); err != nil {
-			if !os.IsNotExist(err) {
-				panic(err)
-			}
+		if err := util.RemoveAllIfExists(root); err != nil {
+			panic(err)
 		}
 	}()
 
