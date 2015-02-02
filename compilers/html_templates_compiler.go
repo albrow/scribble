@@ -6,9 +6,9 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/albrow/scribble/config"
 	"github.com/albrow/scribble/context"
+	"github.com/albrow/scribble/log"
 	"github.com/albrow/scribble/util"
 	"github.com/howeyc/fsnotify"
-	"github.com/wsxiaoys/terminal/color"
 	"html/template"
 	"os"
 	"path/filepath"
@@ -74,7 +74,7 @@ func (c *HtmlTemplatesCompilerType) Compile(srcPath string) error {
 	// parse path and figure out destPath
 	destPath := strings.Replace(srcPath, ".tmpl", ".html", 1)
 	destPath = strings.Replace(destPath, config.SourceDir, config.DestDir, 1)
-	color.Printf("@g    CREATE: %s -> %s\n", srcPath, destPath)
+	log.Success.Printf("CREATE: %s -> %s", srcPath, destPath)
 
 	// Open the source file
 	srcFile, err := os.Open(srcPath)
@@ -143,7 +143,7 @@ func (c *HtmlTemplatesCompilerType) Compile(srcPath string) error {
 // responsible for only passing in files that belong to HtmlTemplatesCompiler
 // according to the MatchFunc. Behavior for any other file is undefined.
 func (c *HtmlTemplatesCompilerType) CompileAll(srcPaths []string) error {
-	fmt.Println("--> compiling go html templates...")
+	log.Default.Println("Compiling go html templates...")
 	for _, srcPath := range srcPaths {
 		if err := c.Compile(srcPath); err != nil {
 			return err

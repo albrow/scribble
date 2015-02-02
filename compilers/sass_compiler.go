@@ -3,9 +3,9 @@ package compilers
 import (
 	"fmt"
 	"github.com/albrow/scribble/config"
+	"github.com/albrow/scribble/log"
 	"github.com/albrow/scribble/util"
 	"github.com/howeyc/fsnotify"
-	"github.com/wsxiaoys/terminal/color"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -48,7 +48,7 @@ func (s *SassCompilerType) Compile(srcPath string) error {
 	// parse path and figure out destPath
 	destPath := strings.Replace(srcPath, ".scss", ".css", 1)
 	destPath = strings.Replace(destPath, config.SourceDir, config.DestDir, 1)
-	color.Printf("@g    CREATE: %s -> %s\n", srcPath, destPath)
+	log.Success.Printf("CREATE: %s -> %s", srcPath, destPath)
 
 	// create the dest directory if needed
 	if err := os.MkdirAll(filepath.Dir(destPath), os.ModePerm); err != nil {
@@ -77,7 +77,7 @@ func (s *SassCompilerType) Compile(srcPath string) error {
 // responsible for only passing in files that belong to SassCompiler
 // according to the MatchFunc. Behavior for any other file is undefined.
 func (s *SassCompilerType) CompileAll(srcPaths []string) error {
-	fmt.Println("--> compiling sass")
+	log.Default.Println("Compiling sass...")
 	for _, srcPath := range srcPaths {
 		if err := s.Compile(srcPath); err != nil {
 			return err

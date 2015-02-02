@@ -2,14 +2,14 @@ package util
 
 import (
 	"fmt"
-	"github.com/wsxiaoys/terminal/color"
+	"github.com/albrow/scribble/log"
 )
 
 // ChimeError outputs the bell character and then the error message,
 // colored red and formatted.
 func ChimeError(err interface{}) {
 	fmt.Print("\a")
-	color.Printf("@r    ERROR: %s\n", err)
+	log.Error.Printf("ERROR: %s\n", err)
 }
 
 // ChimeErrorf outputs the bell character and then the error message,
@@ -17,5 +17,5 @@ func ChimeError(err interface{}) {
 // just like fmt.Printf.
 func ChimeErrorf(format string, args ...interface{}) {
 	fmt.Print("\a")
-	color.Printf("@r    ERROR: %s\n", fmt.Sprintf(format, args...))
+	log.Error.Printf("ERROR: %s\n", fmt.Sprintf(format, args...))
 }

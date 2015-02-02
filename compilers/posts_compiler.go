@@ -6,10 +6,10 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/albrow/scribble/config"
 	"github.com/albrow/scribble/context"
+	"github.com/albrow/scribble/log"
 	"github.com/albrow/scribble/util"
 	"github.com/howeyc/fsnotify"
 	"github.com/russross/blackfriday"
-	"github.com/wsxiaoys/terminal/color"
 	"html/template"
 	"os"
 	"path/filepath"
@@ -109,7 +109,7 @@ func (p *PostsCompilerType) Compile(srcPath string) error {
 	srcFilename := filepath.Base(srcPath)
 	destPath := fmt.Sprintf("%s/%s", config.DestDir, strings.TrimSuffix(srcFilename, ".md"))
 	destIndexFilePath := filepath.Join(destPath, "index.html")
-	color.Printf("@g    CREATE: %s -> %s\n", srcPath, destIndexFilePath)
+	log.Success.Printf("CREATE: %s -> %s", srcPath, destIndexFilePath)
 
 	// Create the index file
 	destFile, err := util.CreateFileWithPath(destIndexFilePath)
@@ -141,7 +141,7 @@ func (p *PostsCompilerType) Compile(srcPath string) error {
 // responsible for only passing in files that belong to AceCompiler
 // according to the MatchFunc. Behavior for any other file is undefined.
 func (p *PostsCompilerType) CompileAll(srcPaths []string) error {
-	fmt.Println("--> compiling posts")
+	log.Default.Println("Compiling posts...")
 	for _, srcPath := range srcPaths {
 		if err := p.Compile(srcPath); err != nil {
 			return err

@@ -1,10 +1,10 @@
 package main
 
 import (
-	"fmt"
 	"github.com/OneOfOne/xxhash/native"
 	"github.com/albrow/scribble/compilers"
 	"github.com/albrow/scribble/config"
+	"github.com/albrow/scribble/log"
 	"github.com/albrow/scribble/util"
 	"github.com/howeyc/fsnotify"
 	"io"
@@ -27,7 +27,7 @@ var fileHashes = map[string][]byte{}
 // watchAll begins watching all the files in config.SourceDir and reacts
 // to any changes.
 func watchAll() {
-	fmt.Println("--> watching for changes")
+	log.Default.Println("Watching for changes...")
 	if watcher == nil {
 		var err error
 		watcher, err = createWatcher()
