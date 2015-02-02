@@ -63,7 +63,7 @@ func (s *SassCompilerType) Compile(srcPath string) error {
 	cmd := exec.Command("sassc", srcPath, destPath)
 	response, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("ERROR compiling sass: %s", string(response))
+		return fmt.Errorf("while compiling sass: %s", string(response))
 	}
 
 	// Add destPath to the list of created files

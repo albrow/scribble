@@ -9,7 +9,7 @@ import (
 // colored red and formatted.
 func ChimeError(err interface{}) {
 	fmt.Print("\a")
-	log.Error.Printf("ERROR: %s\n", err)
+	log.Error.Printf("ERROR: %s", err)
 }
 
 // ChimeErrorf outputs the bell character and then the error message,
@@ -17,5 +17,5 @@ func ChimeError(err interface{}) {
 // just like fmt.Printf.
 func ChimeErrorf(format string, args ...interface{}) {
 	fmt.Print("\a")
-	log.Error.Printf("ERROR: %s\n", fmt.Sprintf(format, args...))
+	log.Error.Printf("ERROR: %s", fmt.Sprintf(format, args...))
 }

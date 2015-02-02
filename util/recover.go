@@ -33,7 +33,7 @@ func Recovery() {
 
 		// Log the error and the line number
 		ChimeError(errMsg)
-		fmt.Printf("Originated from %s:%d\n", file, line)
+		fmt.Printf("Originated from %s:%d", file, line)
 
 		// get the stack traces and print it out
 		if fullStackTrace {
