@@ -133,7 +133,9 @@ func FileChanged(srcPath string, ev fsnotify.FileEvent) error {
 		} else if match {
 			hasMatch = true
 			log.Info.Printf("CHANGED: %s", ev.Name)
-			c.FileChanged(srcPath, ev)
+			if err := c.FileChanged(srcPath, ev); err != nil {
+				return err
+			}
 		}
 	}
 	if !hasMatch {

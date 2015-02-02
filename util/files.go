@@ -74,7 +74,9 @@ func CreateEmptyFiles(paths []string) error {
 		if f, err := CreateFileWithPath(path); err != nil {
 			return err
 		} else {
-			f.Close()
+			if err := f.Close(); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
