@@ -75,7 +75,7 @@ func createWatcher() (*fsnotify.Watcher, error) {
 
 	// Process events
 	go func() {
-		defer util.Recovery()
+		defer util.Recovery(*compileTrace || *serveTrace)
 		for {
 			select {
 			case ev := <-watcher.Event:

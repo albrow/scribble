@@ -12,11 +12,13 @@ var (
 
 	versionCmd = app.Command("version", "Display version information and then quit.")
 
-	serveCmd  = app.Command("serve", "Compile and serve the site.")
-	servePort = serveCmd.Flag("port", "The port on which to serve the site.").Short('p').Default("4000").Int()
+	serveCmd   = app.Command("serve", "Compile and serve the site.")
+	servePort  = serveCmd.Flag("port", "The port on which to serve the site.").Short('p').Default("4000").Int()
+	serveTrace = serveCmd.Flag("trace", "Whether or not to print a full stack trace when there is an error.").Short('t').Default("false").Bool()
 
 	compileCmd   = app.Command("compile", "Compile the site.")
 	compileWatch = compileCmd.Flag("watch", "Whether or not to watch for changes and automatically recompile.").Short('w').Default("").Bool()
+	compileTrace = compileCmd.Flag("trace", "Whether or not to print a full stack trace when there is an error.").Short('t').Default("false").Bool()
 )
 
 const (
@@ -25,7 +27,7 @@ const (
 
 func main() {
 	// catch panics and print them out as errors
-	defer util.Recovery()
+	defer util.Recovery(*compileTrace || *serveTrace)
 
 	// Parse the command line arguments and flags and delegate
 	// to the appropriate functions.

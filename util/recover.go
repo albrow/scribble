@@ -13,12 +13,10 @@ import (
 	"runtime"
 )
 
-var fullStackTrace = false
-
 // Recovery can be used to catch panics and turn them into errors.
 // Recovery will not halt the program, though it does not guarantee
 // that the program won't be halted for other reasons.
-func Recovery() {
+func Recovery(fullStackTrace bool) {
 	if err := recover(); err != nil {
 		// convert err to a string
 		var errMsg string
@@ -28,12 +26,8 @@ func Recovery() {
 			errMsg = fmt.Sprint(err)
 		}
 
-		// get the file and line number
-		_, file, line, _ := runtime.Caller(2)
-
-		// Log the error and the line number
+		// Log the error and chime
 		ChimeError(errMsg)
-		fmt.Printf("Originated from %s:%d", file, line)
 
 		// get the stack traces and print it out
 		if fullStackTrace {
