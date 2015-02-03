@@ -22,7 +22,7 @@ var (
 )
 
 const (
-	version = "0.3.1"
+	version = "X.X.X (develop)"
 )
 
 func main() {
