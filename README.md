@@ -13,6 +13,29 @@ will be released in the near future and will be completely production-ready.
 If you encounter any issues or have any suggestions, please open a pull request :)
 
 
+Installation
+------------
+
+### Prerequisites
+
+Scribble currently requires sassc, which is a C port of the sass library. You may
+need to [download and install sassc from source](https://github.com/sass/sassc). Future
+versions of scribble may relax this requirement and fallback on the ruby implementation
+if you have it.
+
+### Runnable Binary
+
+If you are running mac os x 10.8+, you can download a binary from the
+[Releases page](https://github.com/albrow/scribble/releases). For other platforms,
+you will need to install via go get for now.
+
+### Install via Go Get
+
+1. [Download and install go](https://golang.org/dl/).
+2. Follow [these instructions](https://golang.org/doc/code.html) for setting up your go workspace.
+3. Run `go get -u github.com/albrow/scribble`. To clone the latest version of scribble into `$GOPATH/bin`.
+4. If you have added `$GOPATH/bin` to your PATH, you can run scribble directly. Try running scribble with `scribble version`.
+
 How it Works
 ------------
 
