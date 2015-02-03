@@ -1,10 +1,10 @@
 package main
 
 import (
-	"fmt"
 	"github.com/OneOfOne/xxhash/native"
 	"github.com/albrow/scribble/compilers"
 	"github.com/albrow/scribble/config"
+	"github.com/albrow/scribble/log"
 	"github.com/albrow/scribble/util"
 	"github.com/howeyc/fsnotify"
 	"io"
@@ -27,7 +27,7 @@ var fileHashes = map[string][]byte{}
 // watchAll begins watching all the files in config.SourceDir and reacts
 // to any changes.
 func watchAll() {
-	fmt.Println("--> watching for changes")
+	log.Default.Println("Watching for changes...")
 	if watcher == nil {
 		var err error
 		watcher, err = createWatcher()
@@ -38,7 +38,9 @@ func watchAll() {
 
 	// walk through source dir and watch all subdirectories
 	// we have to do this because fsnotify is currently not recursive
-	watcher.Watch(config.SourceDir)
+	if err := watcher.Watch(config.SourceDir); err != nil {
+		panic(err)
+	}
 	if err := filepath.Walk(config.SourceDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -53,7 +55,9 @@ func watchAll() {
 		if info.IsDir() {
 			watchMutex.Lock()
 			watchedPaths = append(watchedPaths, path)
-			watcher.Watch(path)
+			if err := watcher.Watch(path); err != nil {
+				panic(err)
+			}
 			watchMutex.Unlock()
 		}
 		return nil
@@ -71,14 +75,16 @@ func createWatcher() (*fsnotify.Watcher, error) {
 
 	// Process events
 	go func() {
-		defer util.Recovery()
+		defer util.Recovery(*compileTrace || *serveTrace)
 		for {
 			select {
 			case ev := <-watcher.Event:
 				if changed, err := fileDidChange(ev.Name); err != nil {
 					panic(err)
 				} else if changed {
-					compilers.FileChanged(ev.Name, *ev)
+					if err := compilers.FileChanged(ev.Name, *ev); err != nil {
+						panic(err)
+					}
 				}
 			case err := <-watcher.Error:
 				panic(err)
@@ -131,7 +137,9 @@ func calculateHashForPath(path string) ([]byte, bool, error) {
 			return nil, false, err
 		}
 	}
-	io.Copy(h, f)
+	if _, err := io.Copy(h, f); err != nil {
+		return nil, false, err
+	}
 	if h.Size() == 0 {
 		// The file existed, but it was empty
 		return nil, true, nil

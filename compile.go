@@ -1,9 +1,9 @@
 package main
 
 import (
-	"fmt"
 	"github.com/albrow/scribble/compilers"
 	"github.com/albrow/scribble/config"
+	"github.com/albrow/scribble/log"
 	"github.com/albrow/scribble/util"
 	"os"
 	"path/filepath"
@@ -13,7 +13,7 @@ import (
 // result in config.DestDir.
 func compile(watch bool) {
 	config.Parse()
-	fmt.Println("--> compiling")
+	log.Default.Println("Compiling...")
 	if err := createDestDir(); err != nil {
 		panic(err)
 	}
@@ -41,7 +41,7 @@ func createDestDir() error {
 
 // removeAllOld removes all the files from config.DestDir
 func removeAllOld() error {
-	fmt.Println("    removing old files")
+	log.Default.Println("Removing old files...")
 	// walk through the dest dir
 	if err := filepath.Walk(config.DestDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {

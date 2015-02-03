@@ -6,13 +6,14 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/albrow/scribble/config"
 	"github.com/albrow/scribble/context"
+	"github.com/albrow/scribble/log"
 	"github.com/albrow/scribble/util"
 	"github.com/howeyc/fsnotify"
 	"github.com/russross/blackfriday"
-	"github.com/wsxiaoys/terminal/color"
 	"html/template"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 )
@@ -80,14 +81,21 @@ func (p *PostsCompilerType) CompileMatchFunc() MatchFunc {
 func (p *PostsCompilerType) WatchMatchFunc() MatchFunc {
 	// PostsCompiler needs to watch all posts in the posts dir,
 	// but also needs to watch all the *tmpl files in the posts
-	// layouts dir, because if those change, it affects the way
-	// posts are rendered.
+	// layouts dir, layouts dir, and includes dir. Because if those
+	// change, it may affect the way posts are rendered.
 	postsMatch := pathMatchFunc(p.pathMatch, true, false)
+	layoutsMatch := pathMatchFunc(filepath.Join(config.LayoutsDir, "*.tmpl"), true, false)
 	postLayoutsMatch := pathMatchFunc(filepath.Join(config.PostLayoutsDir, "*.tmpl"), true, false)
 	// unionMatchFuncs combines these two cases and returns a MatchFunc
 	// which will return true if either matches. This allows us to watch
 	// for changes in both the posts dir and the posts layouts dir.
-	return unionMatchFuncs(postsMatch, postLayoutsMatch)
+	allMatch := unionMatchFuncs(postsMatch, layoutsMatch, postLayoutsMatch)
+	if config.IncludesDir != "" {
+		// We also want to watch includes if there are any
+		includesMatch := pathMatchFunc(filepath.Join(config.IncludesDir, "*.tmpl"), true, false)
+		allMatch = unionMatchFuncs(allMatch, includesMatch)
+	}
+	return allMatch
 }
 
 // Compile compiles the file at srcPath. The caller will only
@@ -101,7 +109,7 @@ func (p *PostsCompilerType) Compile(srcPath string) error {
 	srcFilename := filepath.Base(srcPath)
 	destPath := fmt.Sprintf("%s/%s", config.DestDir, strings.TrimSuffix(srcFilename, ".md"))
 	destIndexFilePath := filepath.Join(destPath, "index.html")
-	color.Printf("@g    CREATE: %s -> %s\n", srcPath, destIndexFilePath)
+	log.Success.Printf("CREATE: %s -> %s", srcPath, destIndexFilePath)
 
 	// Create the index file
 	destFile, err := util.CreateFileWithPath(destIndexFilePath)
@@ -133,7 +141,7 @@ func (p *PostsCompilerType) Compile(srcPath string) error {
 // responsible for only passing in files that belong to AceCompiler
 // according to the MatchFunc. Behavior for any other file is undefined.
 func (p *PostsCompilerType) CompileAll(srcPaths []string) error {
-	fmt.Println("--> compiling posts")
+	log.Default.Println("Compiling posts...")
 	for _, srcPath := range srcPaths {
 		if err := p.Compile(srcPath); err != nil {
 			return err
@@ -187,14 +195,20 @@ func (p *PostsCompilerType) RemoveOld() error {
 	return nil
 }
 
-// Posts returns up to limit posts. If limit is 0, it returns
-// all posts. If limit is greater than len(posts), it returns
+// Posts returns up to limit posts, sorted by date. If limit is 0,
+// it returns all posts. If limit is greater than len(posts), it returns
 // all posts.
 func Posts(limit ...int) []*Post {
-	if len(limit) == 0 || limit[0] == 0 || limit[0] > len(posts) {
-		return posts
+	// Sort the posts by date
+	sortedPosts := make([]*Post, len(posts))
+	copy(sortedPosts, posts)
+	sort.Sort(PostsByDate(sortedPosts))
+
+	// Return up to limit posts
+	if len(limit) == 0 || limit[0] == 0 || limit[0] > len(sortedPosts) {
+		return sortedPosts
 	} else {
-		return posts[:limit[0]]
+		return sortedPosts[:limit[0]]
 	}
 }
 
@@ -260,6 +274,14 @@ func (p *Post) parse() error {
 		return err
 	}
 	allFiles := append([]string{postLayoutFile}, otherLayoutFiles...)
+	// Parse the includes files if there are any
+	if config.IncludesDir != "" {
+		includeFiles, err := filepath.Glob(filepath.Join(config.IncludesDir, "*tmpl"))
+		if err != nil {
+			return err
+		}
+		allFiles = append(allFiles, includeFiles...)
+	}
 	tmpl, err := template.ParseFiles(allFiles...)
 	if err != nil {
 		return err

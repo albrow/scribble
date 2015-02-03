@@ -1,11 +1,10 @@
 package compilers
 
 import (
-	"fmt"
 	"github.com/albrow/scribble/config"
+	"github.com/albrow/scribble/log"
 	"github.com/albrow/scribble/util"
 	"github.com/howeyc/fsnotify"
-	"github.com/wsxiaoys/terminal/color"
 	"os"
 	"path/filepath"
 	"strings"
@@ -133,8 +132,10 @@ func FileChanged(srcPath string, ev fsnotify.FileEvent) error {
 			return err
 		} else if match {
 			hasMatch = true
-			color.Printf("@y    CHANGED: %s\n", ev.Name)
-			c.FileChanged(srcPath, ev)
+			log.Info.Printf("CHANGED: %s", ev.Name)
+			if err := c.FileChanged(srcPath, ev); err != nil {
+				return err
+			}
 		}
 	}
 	if !hasMatch {
@@ -142,8 +143,9 @@ func FileChanged(srcPath string, ev fsnotify.FileEvent) error {
 		if match, err := noHiddenNoIgnore(srcPath); err != nil {
 			return err
 		} else if match {
-			color.Printf("@y    CHANGED: %s\n", ev.Name)
-			fmt.Printf("Unmatched path: %s\n", srcPath)
+			log.Info.Printf("CHANGED: %s", ev.Name)
+			// TODO: move the file into config.DestDir verbatim
+			log.Default.Printf("Unmatched path: %s", srcPath)
 		}
 	}
 	return nil
@@ -302,12 +304,9 @@ func matchWalkFunc(paths *[]string, matchFunc func(path string) (bool, error)) f
 		if matched, err := matchFunc(path); err != nil {
 			return err
 		} else if matched {
-			// fmt.Printf("%s matches %s\n", path, pattern)
 			if paths != nil {
 				(*paths) = append(*paths, path)
 			}
-		} else {
-			// fmt.Printf("%s does not match %s\n", path, pattern)
 		}
 		return nil
 	}

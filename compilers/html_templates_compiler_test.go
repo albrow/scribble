@@ -77,6 +77,7 @@ func TestHtmlTemplatesCompile(t *testing.T) {
 	config.SourceDir = filepath.Join(root, "source")
 	config.DestDir = filepath.Join(root, "public")
 	config.LayoutsDir = filepath.Join(config.SourceDir, "_layouts")
+	config.IncludesDir = filepath.Join(config.SourceDir, "_includes")
 	if err := HtmlTemplatesCompiler.Compile(filepath.Join(srcDir, "index.tmpl")); err != nil {
 		t.Fatal(err)
 	}

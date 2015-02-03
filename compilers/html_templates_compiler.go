@@ -6,9 +6,9 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/albrow/scribble/config"
 	"github.com/albrow/scribble/context"
+	"github.com/albrow/scribble/log"
 	"github.com/albrow/scribble/util"
 	"github.com/howeyc/fsnotify"
-	"github.com/wsxiaoys/terminal/color"
 	"html/template"
 	"os"
 	"path/filepath"
@@ -44,7 +44,7 @@ func (c *HtmlTemplatesCompilerType) WatchMatchFunc() MatchFunc {
 	// those which are in the postsLayout dir. When those are changed,
 	// they only affect posts, so we don't need to recompile any other
 	// html template files.
-	htmlTemplatesMatch := filenameMatchFunc("*tmpl", true, false)
+	htmlTemplatesMatch := filenameMatchFunc("*.tmpl", true, false)
 	postLayoutsMatch := pathMatchFunc(filepath.Join(config.PostLayoutsDir, "*.tmpl"), true, false)
 	// excludeMatchFuncs lets us express these conditions easily. It
 	// returns a MatchFunc which will return true iff the path represents
@@ -74,7 +74,7 @@ func (c *HtmlTemplatesCompilerType) Compile(srcPath string) error {
 	// parse path and figure out destPath
 	destPath := strings.Replace(srcPath, ".tmpl", ".html", 1)
 	destPath = strings.Replace(destPath, config.SourceDir, config.DestDir, 1)
-	color.Printf("@g    CREATE: %s -> %s\n", srcPath, destPath)
+	log.Success.Printf("CREATE: %s -> %s", srcPath, destPath)
 
 	// Open the source file
 	srcFile, err := os.Open(srcPath)
@@ -102,14 +102,25 @@ func (c *HtmlTemplatesCompilerType) Compile(srcPath string) error {
 		return fmt.Errorf("Could not convert frontmatter key layout of type %T to string!", layoutKey)
 	}
 
-	// Create the template by parsing the raw content. Then parse all the layout files and add context.FuncMap
+	// Create the template by parsing the raw content. Then parse all the layout files, include files, and add context.FuncMap
 	tmpl := template.New(filepath.Base(srcPath))
 	tmpl.Funcs(context.FuncMap)
 	if _, err := tmpl.Parse(content); err != nil {
 		return err
 	}
-	if _, err := tmpl.ParseGlob(filepath.Join(config.LayoutsDir, "*.tmpl")); err != nil {
-		return err
+	if config.LayoutsDir != "" {
+		if _, err := tmpl.ParseGlob(filepath.Join(config.LayoutsDir, "*.tmpl")); err != nil {
+			return err
+		}
+	} else {
+		// config.LayoutsDir is more or less required. Every page must have a layout
+		return fmt.Errorf("Missing required config variable: layoutsDir. Please add it to config.toml.")
+	}
+	if config.IncludesDir != "" {
+		// config.IncludesDir, on the other hand, is optional. You don't have to use includes.
+		if _, err := tmpl.ParseGlob(filepath.Join(config.IncludesDir, "*.tmpl")); err != nil {
+			return err
+		}
 	}
 
 	// Create and write to the destination file
@@ -132,7 +143,7 @@ func (c *HtmlTemplatesCompilerType) Compile(srcPath string) error {
 // responsible for only passing in files that belong to HtmlTemplatesCompiler
 // according to the MatchFunc. Behavior for any other file is undefined.
 func (c *HtmlTemplatesCompilerType) CompileAll(srcPaths []string) error {
-	fmt.Println("--> compiling go html templates...")
+	log.Default.Println("Compiling go html templates...")
 	for _, srcPath := range srcPaths {
 		if err := c.Compile(srcPath); err != nil {
 			return err
