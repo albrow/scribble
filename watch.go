@@ -129,6 +129,19 @@ func fileDidChange(path string) (bool, error) {
 // If the file does not exist, the second return value will be false.
 func calculateHashForPath(path string) ([]byte, bool, error) {
 	h := xxhash.New64()
+	// Check if the file is a directory
+	info, err := os.Lstat(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, false, nil
+		} else {
+			return nil, false, err
+		}
+	}
+	if info.IsDir() {
+		// For dirs, return nil hash
+		return nil, true, nil
+	}
 	f, err := os.Open(path)
 	if err != nil {
 		if os.IsNotExist(err) {
