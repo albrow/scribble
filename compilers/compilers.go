@@ -144,8 +144,10 @@ func FileChanged(srcPath string, ev fsnotify.FileEvent) error {
 			return err
 		} else if match {
 			log.Info.Printf("CHANGED: %s", ev.Name)
-			// TODO: move the file into config.DestDir verbatim
-			log.Default.Printf("Unmatched path: %s", srcPath)
+			// Move the file into config.DestDir as is
+			if err := copyUnmatchedPaths([]string{ev.Name}); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -225,6 +227,7 @@ func delegateCompilePaths() error {
 func copyUnmatchedPaths(paths []string) error {
 	for _, path := range paths {
 		destPath := strings.Replace(path, config.SourceDir, config.DestDir, 1)
+		log.Success.Printf("CREATE: %s -> %s", path, destPath)
 		if err := util.CopyFile(path, destPath); err != nil {
 			return err
 		}
