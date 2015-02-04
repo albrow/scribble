@@ -97,6 +97,9 @@ func FindPaths(mf MatchFunc) ([]string, error) {
 // it will be copied to config.DestDir directly.
 func CompileAll() error {
 	initCompilers()
+	if err := RemoveAllOld(); err != nil {
+		return err
+	}
 	if err := delegateCompilePaths(); err != nil {
 		return err
 	}
@@ -105,7 +108,39 @@ func CompileAll() error {
 			return err
 		}
 	}
+	log.Default.Print("Copying other files...")
 	if err := copyUnmatchedPaths(UnmatchedPaths); err != nil {
+		return err
+	}
+	return nil
+}
+
+// RemoveAllOld removes all the files from config.DestDir
+func RemoveAllOld() error {
+	log.Default.Println("Removing old files...")
+	UnmatchedPaths = []string{}
+	// walk through the dest dir
+	if err := filepath.Walk(config.DestDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.Name() == config.DestDir {
+			// ignore the destDir itself
+			return nil
+		} else if info.IsDir() {
+			// remove the dir and everything in it
+			if err := util.RemoveAllIfExists(path); err != nil {
+				return err
+			}
+			return filepath.SkipDir
+		} else {
+			// remove the file
+			if err := os.Remove(path); err != nil {
+				return err
+			}
+		}
+		return nil
+	}); err != nil {
 		return err
 	}
 	return nil
@@ -144,8 +179,13 @@ func FileChanged(srcPath string, ev fsnotify.FileEvent) error {
 			return err
 		} else if match {
 			log.Info.Printf("CHANGED: %s", ev.Name)
-			// Move the file into config.DestDir as is
-			if err := copyUnmatchedPaths([]string{ev.Name}); err != nil {
+			// Okay, so.. this case can get a little complicated. We have to take into
+			// account whether the thing being changed is a file or folder, and whether
+			// it is being deleted, created, or modified. For now, we're just going to
+			// recompile the entire blog. We also have to make sure we don't accidentally
+			// change any of the files and folders that other compilers care about.
+			// TODO: optimize this by only recompiling the files that need to be recompiled.
+			if err := CompileAll(); err != nil {
 				return err
 			}
 		}
