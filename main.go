@@ -22,7 +22,7 @@ var (
 )
 
 const (
-	version = "X.X.X (develop)"
+	version = "develop"
 )
 
 func main() {
@@ -38,7 +38,7 @@ func main() {
 	}
 	switch cmd {
 	case versionCmd.FullCommand():
-		fmt.Println("scribble version:", version)
+		fmt.Println(version)
 	case compileCmd.FullCommand():
 		compile(*compileWatch)
 		if *compileWatch {
