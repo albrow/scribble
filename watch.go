@@ -82,7 +82,7 @@ func createWatcher() (*fsnotify.Watcher, error) {
 				if changed, err := fileDidChange(ev.Name); err != nil {
 					panic(err)
 				} else if changed {
-					if err := compilers.FileChanged(ev.Name, *ev); err != nil {
+					if err := compilers.FileChanged(ev.Name, ev); err != nil {
 						panic(err)
 					}
 				}

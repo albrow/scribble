@@ -152,7 +152,7 @@ func (c *HtmlTemplatesCompilerType) CompileAll(srcPaths []string) error {
 	return nil
 }
 
-func (c *HtmlTemplatesCompilerType) FileChanged(srcPath string, ev fsnotify.FileEvent) error {
+func (c *HtmlTemplatesCompilerType) FileChanged(srcPath string, ev *fsnotify.FileEvent) error {
 	// TODO: Analyze template files and be more intelligent here?
 	// If a single file was changed, only recompile that file. If a
 	// layout file was changed, recompile all the files that use that

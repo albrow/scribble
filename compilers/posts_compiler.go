@@ -150,7 +150,7 @@ func (p *PostsCompilerType) CompileAll(srcPaths []string) error {
 	return nil
 }
 
-func (p *PostsCompilerType) FileChanged(srcPath string, ev fsnotify.FileEvent) error {
+func (p *PostsCompilerType) FileChanged(srcPath string, ev *fsnotify.FileEvent) error {
 	// Because of the way we set up the watcher, there are two possible
 	// cases here.
 	// 1) A template in the post layouts dir was changed. In this case,
