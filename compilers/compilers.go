@@ -78,7 +78,7 @@ type Compiler interface {
 	// Typically, the Compiler should recompile certain files.
 	// srcPath will be some path that matches according to WatchMatchFunc,
 	// and ev is the FileEvent associated with the change.
-	FileChanged(srcPath string, ev fsnotify.FileEvent) error
+	FileChanged(srcPath string, ev *fsnotify.FileEvent) error
 }
 
 // FindPaths iterates recursively through config.SourceDir and
@@ -97,6 +97,9 @@ func FindPaths(mf MatchFunc) ([]string, error) {
 // it will be copied to config.DestDir directly.
 func CompileAll() error {
 	initCompilers()
+	if err := RemoveAllOld(); err != nil {
+		return err
+	}
 	if err := delegateCompilePaths(); err != nil {
 		return err
 	}
@@ -105,7 +108,39 @@ func CompileAll() error {
 			return err
 		}
 	}
+	log.Default.Print("Copying other files...")
 	if err := copyUnmatchedPaths(UnmatchedPaths); err != nil {
+		return err
+	}
+	return nil
+}
+
+// RemoveAllOld removes all the files from config.DestDir
+func RemoveAllOld() error {
+	log.Default.Println("Removing old files...")
+	UnmatchedPaths = []string{}
+	// walk through the dest dir
+	if err := filepath.Walk(config.DestDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.Name() == config.DestDir {
+			// ignore the destDir itself
+			return nil
+		} else if info.IsDir() {
+			// remove the dir and everything in it
+			if err := util.RemoveAllIfExists(path); err != nil {
+				return err
+			}
+			return filepath.SkipDir
+		} else {
+			// remove the file
+			if err := os.Remove(path); err != nil {
+				return err
+			}
+		}
+		return nil
+	}); err != nil {
 		return err
 	}
 	return nil
@@ -125,7 +160,7 @@ func compileAllForCompiler(c Compiler) error {
 
 // FileChanged delegates file changes to the appropriate compiler. If srcPath does not match any
 // Compiler, it will be copied to config.DestDir directly.
-func FileChanged(srcPath string, ev fsnotify.FileEvent) error {
+func FileChanged(srcPath string, ev *fsnotify.FileEvent) error {
 	hasMatch := false
 	for _, c := range Compilers {
 		if match, err := c.WatchMatchFunc()(srcPath); err != nil {
@@ -144,8 +179,15 @@ func FileChanged(srcPath string, ev fsnotify.FileEvent) error {
 			return err
 		} else if match {
 			log.Info.Printf("CHANGED: %s", ev.Name)
-			// TODO: move the file into config.DestDir verbatim
-			log.Default.Printf("Unmatched path: %s", srcPath)
+			// Okay, so.. this case can get a little complicated. We have to take into
+			// account whether the thing being changed is a file or folder, and whether
+			// it is being deleted, created, or modified. We also have to make sure we
+			// don't accidentally change any of the files and folders that other compilers
+			// care about.For now, we're just going to recompile the entire blog.
+			// TODO: optimize this by only recompiling the files that need to be recompiled.
+			if err := CompileAll(); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -225,6 +267,7 @@ func delegateCompilePaths() error {
 func copyUnmatchedPaths(paths []string) error {
 	for _, path := range paths {
 		destPath := strings.Replace(path, config.SourceDir, config.DestDir, 1)
+		log.Success.Printf("CREATE: %s -> %s", path, destPath)
 		if err := util.CopyFile(path, destPath); err != nil {
 			return err
 		}

@@ -1,7 +1,7 @@
 Scribble
 ========
 
-Version: 0.3.1
+Version: 0.3.2
 
 A tiny static blog generator written in go.
 
@@ -23,18 +23,19 @@ need to [download and install sassc from source](https://github.com/sass/sassc).
 versions of scribble may relax this requirement and fallback on the ruby implementation
 if you have it.
 
-### Runnable Binary
+### Pkg Installer
 
-If you are running mac os x 10.8+, you can download a binary from the
-[Releases page](https://github.com/albrow/scribble/releases). For other platforms,
-you will need to install via go get for now.
+If you are running mac os x 10.5+, you can download a pkg file from the
+[Releases page](https://github.com/albrow/scribble/releases) which will guide you through
+the process of installing scribble automatically. For other platforms, you will need to
+install via go get for now.
 
 ### Install via Go Get
 
 1. [Download and install go](https://golang.org/dl/).
 2. Follow [these instructions](https://golang.org/doc/code.html) for setting up your go workspace.
-3. Run `go get -u github.com/albrow/scribble`. To clone the latest version of scribble into `$GOPATH/bin`.
-4. If you have added `$GOPATH/bin` to your PATH, you can run scribble directly. Try running scribble with `scribble version`.
+3. Run `go get -u github.com/albrow/scribble`. To clone the latest version of scribble and install it into `$GOPATH/bin`.
+4. If you have added `$GOPATH/bin` to your `$PATH`, you can run scribble directly. Try running scribble with `scribble version`.
 
 How it Works
 ------------
@@ -70,9 +71,14 @@ the flags it supports. The other commands are:
 ### File Structure
 
 I've created a [seed project](https://github.com/albrow/scribble-seed) for scribble which you can
-clone to get a basic blog working. (In the future, there may be a `scribble new` command which will
-automatically create this skeleton for you). To clone the seed project, just run
-`git clone https://github.com/albrow/scribble-seed`.
+clone to get a basic blog working. In the future, there may be a `scribble new` command which will
+automatically create this skeleton for you, but for now you will need to clone the repository. On
+a unix-like system, you can run the following command to clone the version of scribble-seed
+corresponding to your scribble version:
+
+``` bash
+git clone -b `scribble version` --depth 1 https://github.com/albrow/scribble-seed.git
+```
 
 The file structure of the seed project looks like this:
 

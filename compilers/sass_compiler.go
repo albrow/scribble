@@ -86,7 +86,7 @@ func (s *SassCompilerType) CompileAll(srcPaths []string) error {
 	return nil
 }
 
-func (s *SassCompilerType) FileChanged(srcPath string, ev fsnotify.FileEvent) error {
+func (s *SassCompilerType) FileChanged(srcPath string, ev *fsnotify.FileEvent) error {
 	// TODO: Analyze sass files and be more intelligent here?
 	// Only recompile the file at srcPath and any files that import it?
 	// For now, just recompile all sass.
