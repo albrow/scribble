@@ -75,23 +75,31 @@ func createWatcher() (*fsnotify.Watcher, error) {
 
 	// Process events
 	go func() {
-		defer util.Recovery(*compileTrace || *serveTrace)
-		for {
-			select {
-			case ev := <-watcher.Event:
-				if changed, err := fileDidChange(ev.Name); err != nil {
-					panic(err)
-				} else if changed {
-					if err := compilers.FileChanged(ev.Name, ev); err != nil {
-						panic(err)
-					}
-				}
-			case err := <-watcher.Error:
-				panic(err)
-			}
-		}
+		defer func() {
+			// Recover from panics and then restart the watchLoop if needed
+			util.Recovery(*compileTrace || *serveTrace)
+			watchLoop(watcher)
+		}()
+		watchLoop(watcher)
 	}()
 	return watcher, nil
+}
+
+func watchLoop(watcher *fsnotify.Watcher) {
+	for {
+		select {
+		case ev := <-watcher.Event:
+			if changed, err := fileDidChange(ev.Name); err != nil {
+				util.ChimeError(err)
+			} else if changed {
+				if err := compilers.FileChanged(ev.Name, ev); err != nil {
+					util.ChimeError(err)
+				}
+			}
+		case err := <-watcher.Error:
+			util.ChimeError(err)
+		}
+	}
 }
 
 // fileDidChange uses the last known hash to determine whether or
