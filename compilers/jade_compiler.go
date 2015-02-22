@@ -61,9 +61,18 @@ func (j *JadeCompilerType) Compile(srcPath string) error {
 		}
 	}
 
+	// convert context to json to pass to jade
+	// TODO: read frontmatter and add it to the context?
+	pageContext := context.CopyContext()
+	pageContext["Posts"] = Posts()
+	jsonContext, err := json.Marshal(pageContext)
+	if err != nil {
+
+	}
+
 	// set up and execute the command, capturing the output only if there was an error
 	destDir := filepath.Dir(destPath)
-	cmd := exec.Command("jade", srcPath, "--out", destDir)
+	cmd := exec.Command("jade", srcPath, "--out", destDir, "--obj", string(jsonContext))
 	response, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("while compiling jade: %s", string(response))
