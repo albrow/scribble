@@ -26,7 +26,7 @@ var (
 )
 
 const (
-	version = "develop"
+	version = "v0.4.0"
 )
 
 func main() {
