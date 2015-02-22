@@ -97,16 +97,20 @@ func (p *PostsCompilerType) CompileMatchFunc() MatchFunc {
 // is the same as it is for CompileMatchFunc.
 func (p *PostsCompilerType) WatchMatchFunc() MatchFunc {
 	// PostsCompiler needs to watch all posts in the posts dir,
-	// but also needs to watch all the *tmpl files in the posts
-	// layouts dir, layouts dir, and includes dir. Because if those
-	// change, it may affect the way posts are rendered.
+	// but also needs to watch all the files that post layouts compiler
+	// watches. Because if those change, it may affect the way posts are
+	// rendered.
 	postsMatch := pathMatchFunc(p.pathMatch, true, false)
-	layoutsMatch := pathMatchFunc(filepath.Join(config.LayoutsDir, "*.tmpl"), true, false)
-	postLayoutsMatch := pathMatchFunc(filepath.Join(config.PostLayoutsDir, "*.tmpl"), true, false)
+	layoutsMatch := unionMatchFuncs()
+	for _, plc := range PostLayoutCompilers {
+		c := plc.(Compiler)
+		layoutsMatch = unionMatchFuncs(layoutsMatch, c.WatchMatchFunc())
+	}
+
 	// unionMatchFuncs combines these two cases and returns a MatchFunc
 	// which will return true if either matches. This allows us to watch
 	// for changes in both the posts dir and the posts layouts dir.
-	allMatch := unionMatchFuncs(postsMatch, layoutsMatch, postLayoutsMatch)
+	allMatch := unionMatchFuncs(postsMatch, layoutsMatch)
 	if config.IncludesDir != "" {
 		// We also want to watch includes if there are any
 		includesMatch := pathMatchFunc(filepath.Join(config.IncludesDir, "*.tmpl"), true, false)
@@ -168,26 +172,17 @@ func (p *PostsCompilerType) FileChanged(srcPath string, ev *fsnotify.FileEvent) 
 	// case, ideally we only recompile the post that was changed. We need to
 	// take into account any rename, delete, or create events and how they
 	// affect the output files in destDir.
-	switch filepath.Ext(srcPath) {
-	case ".md":
-		// TODO: Be more intelligent here? If a single post file was midified,
-		// we can simply recompile that post. We would also need to take into
-		// account the subtle differences between rename, create, and delete
-		// events. For now, recompile all posts.
-		if err := recompileAllForCompiler(p); err != nil {
-			return err
-		}
-		return nil
-	case ".tmpl":
-		// TODO: Analyze post files and be more intelligent here?
-		// When a post layout changes, only recompile the posts that
-		// use that layout. For now, recompile all posts.
-		if err := recompileAllForCompiler(p); err != nil {
-			return err
-		}
-		return nil
+
+	// TODO: Be more intelligent here? If a single post file was changed,
+	// we can simply recompile that post. If a post layout file was changed,
+	// we should recompile all posts that use that layout. We would also need
+	// to take into account the subtle differences between rename, create, and
+	// delete events. For now, recompile all posts.
+	if err := recompileAllForCompiler(p); err != nil {
+		return err
 	}
 	return nil
+
 }
 
 func (p *PostsCompilerType) RemoveOld() error {
