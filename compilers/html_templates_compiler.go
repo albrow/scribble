@@ -172,3 +172,42 @@ func (c *HtmlTemplatesCompilerType) RemoveOld() error {
 	}
 	return nil
 }
+
+func (c *HtmlTemplatesCompilerType) PostLayoutMatchFunc() MatchFunc {
+	return filenameMatchFunc("*.tmpl", true, false)
+}
+
+func (c *HtmlTemplatesCompilerType) RenderPost(post *Post, destPath string) error {
+	// Create the template object by parsing all the files we might need
+	postLayoutFile := filepath.Join(config.PostLayoutsDir, post.LayoutName)
+	otherLayoutFiles, err := filepath.Glob(filepath.Join(config.LayoutsDir, "*.tmpl"))
+	if err != nil {
+		return err
+	}
+	allFiles := append([]string{postLayoutFile}, otherLayoutFiles...)
+	if config.IncludesDir != "" {
+		includeFiles, err := filepath.Glob(filepath.Join(config.IncludesDir, "*tmpl"))
+		if err != nil {
+			return err
+		}
+		allFiles = append(allFiles, includeFiles...)
+	}
+	tmpl, err := template.ParseFiles(allFiles...)
+	if err != nil {
+		return err
+	}
+
+	// Create the index file
+	destFile, err := util.CreateFileWithPath(destPath)
+	if err != nil {
+		return err
+	}
+
+	// Render the post with the proper context and write the results to the destFile
+	postContext := context.CopyContext()
+	postContext["Post"] = post
+	if err := tmpl.Execute(destFile, postContext); err != nil {
+		return fmt.Errorf("ERROR compiling html template for posts: %s", err.Error())
+	}
+	return nil
+}

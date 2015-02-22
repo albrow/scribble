@@ -45,9 +45,16 @@ type Post struct {
 	// the full source path
 	src string `toml:"-"`
 	// the layout tmpl file to be used for the post
-	Layout string `toml:"layout"`
-	// the html template that can be used to render the post
-	template *template.Template
+	LayoutName string `toml:"layout"`
+	// the layout template compiler (e.g. go html template or jade) that the post will be rendered into
+	LayoutCompiler PostLayoutCompiler
+}
+
+var PostLayoutCompilers = []PostLayoutCompiler{&HtmlTemplatesCompilerType{}}
+
+type PostLayoutCompiler interface {
+	RenderPost(post *Post, destPath string) error
+	PostLayoutMatchFunc() MatchFunc
 }
 
 var (
@@ -111,23 +118,15 @@ func (p *PostsCompilerType) Compile(srcPath string) error {
 	destIndexFilePath := filepath.Join(destPath, "index.html")
 	log.Success.Printf("CREATE: %s -> %s", srcPath, destIndexFilePath)
 
-	// Create the index file
-	destFile, err := util.CreateFileWithPath(destIndexFilePath)
-	if err != nil {
-		return err
-	}
-
 	// Parse content and frontmatter, then set the appropriate layout based on
 	// the layout key in the frontmatter
 	if err := post.parse(); err != nil {
 		return err
 	}
 
-	// Write to destFile by executing the template
-	postContext := context.CopyContext()
-	postContext["Post"] = post
-	if err := post.template.Execute(destFile, postContext); err != nil {
-		return fmt.Errorf("ERROR compiling html template for posts: %s", err.Error())
+	// Render the post using its layout compiler
+	if err := post.LayoutCompiler.RenderPost(post, destIndexFilePath); err != nil {
+		return err
 	}
 
 	// Add the created dir to the list of created dirs
@@ -261,32 +260,18 @@ func (p *Post) parse() error {
 	// Parse the markdown content and set p.Content
 	p.Content = template.HTML(blackfriday.MarkdownCommon([]byte(content)))
 
-	// Create a template for the post
-	if p.Layout == "" {
+	// Select the proper compiler for the post layout
+	if p.LayoutName == "" {
 		return fmt.Errorf("Could not find layout definition in toml frontmatter for post: %s", p.src)
 	}
-
-	// When we call template.ParseFiles, we want the post layout file to be first,
-	// so it is the one that will be executed.
-	postLayoutFile := filepath.Join(config.PostLayoutsDir, p.Layout)
-	otherLayoutFiles, err := filepath.Glob(filepath.Join(config.LayoutsDir, "*.tmpl"))
-	if err != nil {
-		return err
-	}
-	allFiles := append([]string{postLayoutFile}, otherLayoutFiles...)
-	// Parse the includes files if there are any
-	if config.IncludesDir != "" {
-		includeFiles, err := filepath.Glob(filepath.Join(config.IncludesDir, "*tmpl"))
-		if err != nil {
+	for _, c := range PostLayoutCompilers {
+		if match, err := c.PostLayoutMatchFunc()(p.LayoutName); err != nil {
 			return err
+		} else if match {
+			p.LayoutCompiler = c
+			break
 		}
-		allFiles = append(allFiles, includeFiles...)
 	}
-	tmpl, err := template.ParseFiles(allFiles...)
-	if err != nil {
-		return err
-	}
-	p.template = tmpl
 
 	return nil
 }
