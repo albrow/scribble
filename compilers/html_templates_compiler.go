@@ -92,16 +92,6 @@ func (c *HtmlTemplatesCompilerType) Compile(srcPath string) error {
 		}
 	}
 
-	// Read the layout key from the toml frontmatter
-	layoutKey, found := pageContext["layout"]
-	if !found {
-		return fmt.Errorf("Could not find layout definition in toml frontmatter for html template: %s", srcPath)
-	}
-	layout, ok := layoutKey.(string)
-	if !ok {
-		return fmt.Errorf("Could not convert frontmatter key layout of type %T to string!", layoutKey)
-	}
-
 	// Create the template by parsing the raw content. Then parse all the layout files, include files, and add context.FuncMap
 	tmpl := template.New(filepath.Base(srcPath))
 	tmpl.Funcs(context.FuncMap)
@@ -128,7 +118,7 @@ func (c *HtmlTemplatesCompilerType) Compile(srcPath string) error {
 	if err != nil {
 		return err
 	}
-	if err := tmpl.ExecuteTemplate(destFile, layout, pageContext); err != nil {
+	if err := tmpl.Execute(destFile, pageContext); err != nil {
 		return err
 	}
 
