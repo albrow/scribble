@@ -18,6 +18,16 @@ import (
 	"time"
 )
 
+func init() {
+	// Detect whether a compiler is capable of compiling post layouts,
+	// and if so, add it to the list of post layout compilers.
+	for _, c := range Compilers {
+		if plc, ok := c.(PostLayoutCompiler); ok {
+			PostLayoutCompilers = append(PostLayoutCompilers, plc)
+		}
+	}
+}
+
 // PostsCompilerType represents a type capable of compiling post files.
 type PostsCompilerType struct {
 	pathMatch string
@@ -50,7 +60,7 @@ type Post struct {
 	LayoutCompiler PostLayoutCompiler
 }
 
-var PostLayoutCompilers = []PostLayoutCompiler{&HtmlTemplatesCompilerType{}}
+var PostLayoutCompilers []PostLayoutCompiler
 
 type PostLayoutCompiler interface {
 	RenderPost(post *Post, destPath string) error
