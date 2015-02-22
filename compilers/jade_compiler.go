@@ -1,8 +1,10 @@
 package compilers
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/albrow/scribble/config"
+	"github.com/albrow/scribble/context"
 	"github.com/albrow/scribble/log"
 	"github.com/albrow/scribble/util"
 	"github.com/howeyc/fsnotify"
@@ -103,6 +105,39 @@ func (j *JadeCompilerType) RemoveOld() error {
 		if err := util.RemoveIfExists(path); err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+func (c *JadeCompilerType) PostLayoutMatchFunc() MatchFunc {
+	return filenameMatchFunc("*.jade", true, false)
+}
+
+func (c *JadeCompilerType) RenderPost(post *Post, destPath string) error {
+	// Create the context for the post (in this case json data)
+	postContext := context.CopyContext()
+	postContext["Post"] = post
+	jsonContext, err := json.Marshal(postContext)
+	if err != nil {
+		return fmt.Errorf("ERROR converting post context to json for jade post layout:\n%s", err.Error())
+	}
+
+	// set up and execute the command, capturing the output only if there was an error
+	postLayoutFile := filepath.Join(config.PostLayoutsDir, post.LayoutName)
+	destDir := filepath.Dir(destPath)
+	cmd := exec.Command("jade", postLayoutFile, "--out", destDir, "--obj", string(jsonContext))
+	response, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("while compiling jade: %s", string(response))
+	}
+
+	// jade does not allow us to specify the filename, so we'll manually do a rename
+	// TODO: on unixy systems use a pipe or redirect to a file
+	layoutNameExt := filepath.Ext(post.LayoutName)
+	layoutNameNoExt := strings.Replace(post.LayoutName, layoutNameExt, "", 1)
+	oldName := strings.Replace(destPath, "index", layoutNameNoExt, 1)
+	if err := os.Rename(oldName, destPath); err != nil {
+		return err
 	}
 	return nil
 }

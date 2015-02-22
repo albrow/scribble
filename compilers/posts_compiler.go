@@ -282,6 +282,9 @@ func (p *Post) parse() error {
 			break
 		}
 	}
+	if p.LayoutCompiler == nil {
+		return fmt.Errorf("Could not find post layout compiler for layout named %s post: %s", p.LayoutName, p.src)
+	}
 
 	return nil
 }
