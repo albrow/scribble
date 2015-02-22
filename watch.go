@@ -1,3 +1,7 @@
+// Copyright 2015 Alex Browne.  All rights reserved.
+// Use of this source code is governed by the MIT
+// license, which can be found in the LICENSE file.
+
 package main
 
 import (
@@ -161,7 +165,12 @@ func calculateHashForPath(path string) ([]byte, bool, error) {
 	if _, err := io.Copy(h, f); err != nil {
 		return nil, false, err
 	}
-	if h.Size() == 0 {
+
+	fstat, err := f.Stat()
+	if err != nil {
+		return nil, false, err
+	}
+	if fstat.Size() == 0 {
 		// The file existed, but it was empty
 		return nil, true, nil
 	}

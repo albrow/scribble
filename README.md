@@ -1,7 +1,7 @@
 Scribble
 ========
 
-Version: 0.3.2
+Version: 0.4.0
 
 A tiny static blog generator written in go.
 
@@ -18,10 +18,19 @@ Installation
 
 ### Prerequisites
 
-Scribble currently requires sassc, which is a C port of the sass library. You may
-need to [download and install sassc from source](https://github.com/sass/sassc). Future
-versions of scribble may relax this requirement and fallback on the ruby implementation
-if you have it.
+If you want scribble to compile sass for you, you  must install sassc, which is a C port
+of the sass library. You may need to [download and install sassc from source](https://github.com/sass/sassc).
+Future versions of scribble may relax this requirement and fallback on the ruby implementation
+if you have it. If you don't want to use sass, you don't have to install it.
+
+As of scribble v0.4.0, you can use either
+[go's native html templates](http://golang.org/pkg/html/template/) or [jade](http://jade-lang.com/)
+for pages and layouts. If you want to use jade, you need to
+[install it first](https://github.com/jadejs/jade#installation). Jade requires node, so if
+you don't have node you will need to [install that as well](http://nodejs.org/). After you
+are done installing, make sure the jade executable is in your PATH and that you can run `jade`
+from the command line. If you plan to use go's native html templates, you don't have to install
+anything. 
 
 ### Pkg Installer
 
@@ -37,6 +46,7 @@ install via go get for now.
 3. Run `go get -u github.com/albrow/scribble`. To clone the latest version of scribble and install it into `$GOPATH/bin`.
 4. If you have added `$GOPATH/bin` to your `$PATH`, you can run scribble directly. Try running scribble with `scribble version`.
 
+
 How it Works
 ------------
 
@@ -46,7 +56,7 @@ static blog made up of html, css, and js. It uses:
 - Markdown for writing posts
 - Toml for frontmatter and configuration
 - Sass for styling
-- Standard go html templates for pages
+- Standard go html templates or jade for pages and layouts
 
 Scribble is optimized for speed and usability. It compiles the source files for a medium-sized blog
 in next to no time. It uses sassc (a C port of the sass compiler) to compile sass. It also features
@@ -80,6 +90,9 @@ corresponding to your scribble version:
 git clone -b `scribble version` --depth 1 https://github.com/albrow/scribble-seed.git
 ```
 
+As of v0.4.0, scribble-seed uses jade as the default templating language. If you want to use
+go's native html templates instead, see the section on [Html Templates](#html-templates) below.
+
 The file structure of the seed project looks like this:
 
 ```
@@ -88,17 +101,17 @@ blog
 ├── public
 └── source
     ├── _includes
-    │   ├── foot.tmpl
-    │   └── head.tmpl
+    │   ├── foot.jade
+    │   └── head.jade
     ├── _layouts
-    │   └── base.tmpl
+    │   └── base.jade
     ├── _post_layouts
-    │   └── post.tmpl
+    │   └── post.jade
     ├── _posts
     │   ├── one.md
     │   ├── three.md
     │   └── two.md
-    ├── index.tmpl
+    ├── index.jade
     ├── js
     │   └── main.js
     └── styles
@@ -120,36 +133,38 @@ folder that scribble will serve from when using the `scribble serve` command. Th
 posts, html templates, and javascript. This is set via the `sourceDir` key in `config.toml`.
 `sourceDir` is required but you can set it to anything you want.
 
-- `source/_includes` is an optional folder where you can put partial html templates, i.e. templates
+- `source/_includes` is an optional folder where you can put partial templates, i.e. templates
 which don't constitute a full page on their own, but are meant to be *included* in other templates.
 In the seed project, there are two files in `source/_includes`, one for filling in the `<head>`
 tag with metadata and stylesheets, and one for including any javascript files at the bottom of the
-`<body>` tag. This is set via the `includesDir` key in `config.toml`. `includesDir` is optional and
-you don't have to have any includes if you don't want them.
+`<body>` tag. If you are using go's native html/templates, you must tell scribble where the includes
+are located via the `includesDir` key in `config.toml`. If you are using jade, the `includesDir` key
+has no effect and you must specifiy includes by their full or relative paths. However it's still a good
+idea to organize your includes into a single directory.
 
-- `source/_layouts` is where you put html layouts. Layouts are reusable html wrappers that define how
-certain pages will look. In the seed project, there is just one layout, called `base.tmpl`. It consists
+- `source/_layouts` is where you put html layouts. Layouts are reusable wrappers that define how
+certain pages will look. In the seed project, there is just one layout, called `base.jade`. It consists
 of html boilerplate like the `<html>`, `<head>`, and `<body>` tags. It includes the two files in our
-`_includes` directory by using the html/template syntax `{{ template "head.tmpl" . }}`. The layouts
-directory is defined via the `layoutsDir` key in `config.toml`. `layoutsDir` is required, along with at
-least one layout but you can set it to anything you want.
+`_includes` directory. If you are using go's native templates, the layouts directory is required and 
+must be defined via the `layoutsDir` key in `config.toml`. However, if you are using jade, the `layoutsDir`
+key has no effect and you must reference layouts by their full or relative paths. However it's still a
+good idea to organize your layouts into a single directory.
 
 - `source/_post_layouts` is where you put post layouts. Like html layouts, post layouts are reusable
 html wrappers that define how certain posts will look. In the seed project, there is just one post layout,
-called `post.tmpl`. The default template simply consists of the title of the post in a header and
+called `post.jade`. The default template simply consists of the title of the post in a header and
 the content of the post wrapped in a div below it. The post layouts directory is defined via the
-`postLayoutsDir` key in `config.toml`. `postLayoutsDir` is required, along with at least one post layout,
-but you can set it to anything you want.
+`postLayoutsDir` key in `config.toml`. `postLayoutsDir` is required, along with at least one post layout.
+Post layouts can be a `.tmpl` file if you wish to use go's native templates instead of jade.
 
 - `_posts` is where your posts will reside. Posts are written in markdown and must include toml
 frontmatter which defines the post layout, and optionally the title, author's name, date, and
 description. The posts directory is defined via the `postsDir` key in `config.toml`. `postsDir` is
 required but you can set it to anything you want.
 
-- `index.tmpl` is the index page and will compile to index.html. It consists of an unordered list
-of links to the 5 most recent posts. It also has frontmatter at the top of the file to tell scribble
-to use the `base.tmpl` layout. You are not required to have an `index.tmpl` file, and you can organize
-your pages however you want (see compilation details below). 
+- `index.jade` is the index page and will compile to index.html. It consists of an unordered list
+of links to the 5 most recent posts. You are not required to have an `index.jade` file, and you can
+organize your pages however you want (see compilation details below). 
 
 - `js` is a folder where you can put javascript. Any files here will be copied to `destDir` directly.
 You can actually put your javascript files in a different folder if you want. Scribble will
@@ -159,7 +174,8 @@ need any javascript, you can simply remove this folder.
 - `styles` is where you can put sass stylesheets. They will be picked up by the sass compiler, and
 any sass files that don't start with an underscore will be compiled to css files in `destDir`. Just
 like javascript files, you can just put sass files in a different directory if you want. Scribble will
-pick them up no matter what directory they're in (see compilation details below).
+pick them up no matter what directory they're in (see compilation details below). If you don't want
+to use sass at all, you can put css files here and they will also be picked up by the compiler.
 
 
 ### Compilation
@@ -170,12 +186,12 @@ sass imports from being published. More specifically, compilation follows these 
 
 1. Any markdown files (identified by the .md extension) in `postsDir` get treated as posts and are
 	converted to html. Specifically, They are converted to an index.html file in a folder with the
-	same name as the markdown file. So `source/_posts/first.md` becomes `public/first/index.html`.
-	They are also added to an in-memory representation of posts and their metadata is accessible through
-	the [Posts function](https://github.com/albrow/scribble/blob/dc25cd04f111659d19cd8b9456488a949a79aedd/compilers/posts_compiler.go#L193)
-	in templates. Markdown files anywhere else are currently ignored, but may be converted to html in future
-	versions. That's why your `postsDir` should start with an underscore, so that your posts will be distinct
-	from markdown pages.
+	same name as the markdown file. So `source/_posts/first.md` becomes `public/first/index.html` and
+	can be accessed by the url `public/first`. They are also added to an in-memory representation of
+	posts and their metadata is accessible through the [Posts function](https://github.com/albrow/scribble/blob/dc25cd04f111659d19cd8b9456488a949a79aedd/compilers/posts_compiler.go#L193) if you are using go's
+	native templates, or the `Posts` key if you are using jade. Markdown files anywhere else are
+	currently ignored, but may be converted to html in future versions. That's why your `postsDir`
+	should start with an underscore, so that your posts will be distinct from markdown pages.
 2. Any sass files (identified by the .scss extension) that do not start with an underscore and are 
 	not in a directory that starts with an underscore are converted to css and retain the same filename
 	and relative path. So `source/styles/base/main.scss` becomes `public/styles/base/main.css`, and
@@ -186,7 +202,13 @@ sass imports from being published. More specifically, compilation follows these 
 	`source/about/_partials.tmpl` is not copied over to `destDir`. This is why your `layoutsDir`,
 	`includesDir`, and `postLayoutsDir` should have names that start with underscores, because we don't
 	want those files to be directly converted to html.
-4. Any other files in `sourceDir` that do not start with an underscore and are not in a directory that
+4. Any jade files (identified by the .jade extension) that do not start with an underscore and are
+	not in a directory that starts with an underscore are converted to html and retain the same
+	filename and relative path. So `source/about/index.jade` becomes `public/about/index.html`, and
+	`source/about/_partials.jade` is not copied over to `destDir`. This is why your `layoutsDir`,
+	`includesDir`, and `postLayoutsDir` should have names that start with underscores, because we don't
+	want those files to be directly converted to html.
+5. Any other files in `sourceDir` that do not start with an underscore and are not in a directory that
 	starts with an underscore are simply copied over as is, retaining their relative paths. So
 	`source/js/main.js` becomes `public/js/main.js` and `source/js/_libs/watch.js` would not
 	be copied over to `destDir`.
@@ -208,7 +230,7 @@ public
     └── index.html
 ```
 
-- `index.html` came from `source/index.tmpl`
+- `index.html` came from `source/index.jade`
 
 - `js/main.js` came from `source/js/main.js`
 
@@ -233,7 +255,7 @@ Here's an example of a simple post file with all the frontmatter included:
 title = "My First Blog Post"
 author = "Your Name"
 date = "2014-11-16T13:50:53-05:00"
-layout = "post.tmpl"
+layout = "post.jade"
 description = "The first post I've ever written using scribble!"
 +++
 
@@ -253,31 +275,40 @@ This is a paragraph.
 
 Any sass files that have the .scss extension will be compiled into css automatically (unless they start
 with an underscore as described above in the Compilation section). If you already know sass, you don't have
-to change anything about the way you write sass files.
+to change anything about the way you write sass with scribble.
 
 #### Related Resources:
 
 [Learn more about sass](http://sass-lang.com/).
 
+### Jade
+
+You may use the [jade templating language](http://jade-lang.com/) for html templates and layouts.
+If you already know jade, you don't have to change anything about the way that you write jade with
+scribble.
+
+#### Related Resources
+
+[The official jade language reference](http://jade-lang.com/reference/)
+
 ### Html Templates
 
-Scribble uses go's [html/template](http://golang.org/pkg/html/template/) package for html templates. This
-includes regular html pages, as well as layouts and includes. Admittedly, this may be the component that is
-the hardest to grok at first. I strongly recommend the related resources at the bottom of this section.
+You may use go's [html/template](http://golang.org/pkg/html/template/) package for html templates and layouts.
+Admittedly, this may be the component that is the hardest to grok at first. I strongly recommend the related
+resources at the bottom of this section.
 
-All templates should have the .tmpl extension. Scribble uses the following conventions, but you are not strictly
-required to adhere to them:
+All templates should have the .tmpl extension. Scribble uses the following conventions, but you are not 
+strictly required to adhere to them:
 
 1. Html layouts (which exist in `layoutsDir`) should be a wrapper around a named template, typically called
-`"content"`. Templates which use the layout will be required to define the content template.
+`"content"`. Templates which use the layout define a content named template and then render the layout with
+the content inside. 
 2. Layouts and includes are identified by their base filename, including the extension. (This is the go
 default when using `ParseFiles` or `ParseGlob`).
 3. Post layouts define a content template and may use a layout as a wrapper.
 
-You are however, required to define a layout in the frontmatter of any html template. The layout file is
-associated with the html template when parsing it.
-
-Here are some examples taken from the [seed project](https://github.com/albrow/scribble-seed).
+Here are some examples of converting layouts from the [seed project](https://github.com/albrow/scribble-seed)
+to go's native templates:
 
 `_layouts/base.tmpl`: The default layout.
 ``` html
@@ -307,10 +338,6 @@ Here are some examples taken from the [seed project](https://github.com/albrow/s
 
 `index.tmpl`: The index page (gets converted to index.html).
 ``` html
-+++
-# layout is required to be defined in the frontmatter
-layout = "base.tmpl"
-+++
 <!-- 
 	We wrap the entire template in a define "content" block so that when
 	the templates are executed and compiled, everything here will take the
@@ -334,6 +361,8 @@ layout = "base.tmpl"
 	{{end}}
 </ul>
 {{ end }}
+<!-- Render the content named template inside of the base.tmpl layout -->
+{{ template "base.tmpl" }}
 ```
 
 `_post_layouts/post.tmpl`: The default layout for posts.
@@ -353,9 +382,7 @@ layout = "base.tmpl"
 	{{.Post.Content}}
 </div>
 {{ end }}
-<!-- 
-	Execute base.tmpl, where everything inside the content template will be rendered.
--->
+<!-- Render the content named template inside of the base.tmpl layout -->
 {{ template "base.tmpl" . }}
 ```
 
@@ -363,4 +390,10 @@ layout = "base.tmpl"
 
 - [Learn more about go's text templates](http://golang.org/pkg/text/template/), which share a lot of functionality with html templates.
 - [Learn more about go's html templates](http://golang.org/pkg/html/template/).
-- [Learn more about layout/template inheritance in go](https://elithrar.github.io/article/approximating-html-template-inheritance/). (Scribble takes inspiration from the ideas there).
+- [Learn more about layout/template inheritance in go](https://elithrar.github.io/article/approximating-html-template-inheritance/). (The ideas there will work well with scribble).
+
+
+License
+-------
+
+Scribble is licensed under the MIT License. See the LICENSE file for more information.

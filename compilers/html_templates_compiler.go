@@ -1,3 +1,7 @@
+// Copyright 2015 Alex Browne.  All rights reserved.
+// Use of this source code is governed by the MIT
+// license, which can be found in the LICENSE file.
+
 package compilers
 
 import (
@@ -92,16 +96,6 @@ func (c *HtmlTemplatesCompilerType) Compile(srcPath string) error {
 		}
 	}
 
-	// Read the layout key from the toml frontmatter
-	layoutKey, found := pageContext["layout"]
-	if !found {
-		return fmt.Errorf("Could not find layout definition in toml frontmatter for html template: %s", srcPath)
-	}
-	layout, ok := layoutKey.(string)
-	if !ok {
-		return fmt.Errorf("Could not convert frontmatter key layout of type %T to string!", layoutKey)
-	}
-
 	// Create the template by parsing the raw content. Then parse all the layout files, include files, and add context.FuncMap
 	tmpl := template.New(filepath.Base(srcPath))
 	tmpl.Funcs(context.FuncMap)
@@ -128,7 +122,7 @@ func (c *HtmlTemplatesCompilerType) Compile(srcPath string) error {
 	if err != nil {
 		return err
 	}
-	if err := tmpl.ExecuteTemplate(destFile, layout, pageContext); err != nil {
+	if err := tmpl.Execute(destFile, pageContext); err != nil {
 		return err
 	}
 
@@ -169,6 +163,45 @@ func (c *HtmlTemplatesCompilerType) RemoveOld() error {
 		if err := util.RemoveIfExists(path); err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+func (c *HtmlTemplatesCompilerType) PostLayoutMatchFunc() MatchFunc {
+	return filenameMatchFunc("*.tmpl", true, false)
+}
+
+func (c *HtmlTemplatesCompilerType) RenderPost(post *Post, destPath string) error {
+	// Create the template object by parsing all the files we might need
+	postLayoutFile := filepath.Join(config.PostLayoutsDir, post.LayoutName)
+	otherLayoutFiles, err := filepath.Glob(filepath.Join(config.LayoutsDir, "*.tmpl"))
+	if err != nil {
+		return err
+	}
+	allFiles := append([]string{postLayoutFile}, otherLayoutFiles...)
+	if config.IncludesDir != "" {
+		includeFiles, err := filepath.Glob(filepath.Join(config.IncludesDir, "*tmpl"))
+		if err != nil {
+			return err
+		}
+		allFiles = append(allFiles, includeFiles...)
+	}
+	tmpl, err := template.ParseFiles(allFiles...)
+	if err != nil {
+		return err
+	}
+
+	// Create the index file
+	destFile, err := util.CreateFileWithPath(destPath)
+	if err != nil {
+		return err
+	}
+
+	// Render the post with the proper context and write the results to the destFile
+	postContext := context.CopyContext()
+	postContext["Post"] = post
+	if err := tmpl.Execute(destFile, postContext); err != nil {
+		return fmt.Errorf("ERROR compiling html template for posts: %s", err.Error())
 	}
 	return nil
 }

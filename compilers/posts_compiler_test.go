@@ -1,3 +1,7 @@
+// Copyright 2015 Alex Browne.  All rights reserved.
+// Use of this source code is governed by the MIT
+// license, which can be found in the LICENSE file.
+
 package compilers
 
 import (
@@ -51,10 +55,10 @@ func TestPostsPathMatch(t *testing.T) {
 	test_util.CheckStringsMatch(t, expectedPaths, gotPaths)
 }
 
-func TestPostsCompiler(t *testing.T) {
+func TestPostsCompilerWithHtmlTemplateLayout(t *testing.T) {
 	// Create a root path where all of our test files for this
 	// test will live
-	root := string(os.PathSeparator) + filepath.Join("tmp", "test_posts_compiler")
+	root := string(os.PathSeparator) + filepath.Join("tmp", "test_posts_compiler", "html_template_layout")
 	defer func() {
 		// Remove everything after we're done
 		if err := util.RemoveAllIfExists(root); err != nil {
@@ -63,7 +67,43 @@ func TestPostsCompiler(t *testing.T) {
 	}()
 
 	// Copy some files from test_files to source directory in the temp root
-	testFilesDir := filepath.Join(os.Getenv("GOPATH"), "src", "github.com", "albrow", "scribble", "test_files", "posts")
+	testFilesDir := filepath.Join(os.Getenv("GOPATH"), "src", "github.com", "albrow", "scribble", "test_files", "posts", "html_template_layout")
+	srcDir := filepath.Join(root, "source")
+	destDir := filepath.Join(root, "public")
+	if err := util.RecursiveCopy(filepath.Join(testFilesDir, "source"), srcDir); err != nil {
+		t.Fatal(err)
+	}
+
+	// Attempt to compile the posts
+	config.SourceDir = filepath.Join(root, "source")
+	config.PostsDir = filepath.Join(config.SourceDir, "_posts")
+	config.LayoutsDir = filepath.Join(config.SourceDir, "_layouts")
+	config.PostLayoutsDir = filepath.Join(config.SourceDir, "_post_layouts")
+	config.DestDir = filepath.Join(root, "public")
+	if err := PostsCompiler.Compile(filepath.Join(config.PostsDir, "post.md")); err != nil {
+		t.Fatal(err)
+	}
+
+	// Make sure the compiled result is correct
+	expectedDir := filepath.Join(testFilesDir, "public")
+	expectedFile := filepath.Join(expectedDir, "post", "index.html")
+	gotFile := filepath.Join(destDir, "post", "index.html")
+	test_util.CheckFilesMatch(t, expectedFile, gotFile)
+}
+
+func TestPostsCompilerWithJadeLayout(t *testing.T) {
+	// Create a root path where all of our test files for this
+	// test will live
+	root := string(os.PathSeparator) + filepath.Join("tmp", "test_posts_compiler", "jade_layout")
+	defer func() {
+		// Remove everything after we're done
+		if err := util.RemoveAllIfExists(root); err != nil {
+			panic(err)
+		}
+	}()
+
+	// Copy some files from test_files to source directory in the temp root
+	testFilesDir := filepath.Join(os.Getenv("GOPATH"), "src", "github.com", "albrow", "scribble", "test_files", "posts", "jade_layout")
 	srcDir := filepath.Join(root, "source")
 	destDir := filepath.Join(root, "public")
 	if err := util.RecursiveCopy(filepath.Join(testFilesDir, "source"), srcDir); err != nil {

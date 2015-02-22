@@ -1,3 +1,7 @@
+// Copyright 2015 Alex Browne.  All rights reserved.
+// Use of this source code is governed by the MIT
+// license, which can be found in the LICENSE file.
+
 package main
 
 import (
@@ -22,7 +26,7 @@ var (
 )
 
 const (
-	version = "v0.3.2"
+	version = "v0.4.0"
 )
 
 func main() {

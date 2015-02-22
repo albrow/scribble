@@ -1,3 +1,7 @@
+// Copyright 2015 Alex Browne.  All rights reserved.
+// Use of this source code is governed by the MIT
+// license, which can be found in the LICENSE file.
+
 package compilers
 
 import (
@@ -16,7 +20,12 @@ import (
 // the existence of a list of parsed Post objects. For example,
 // AceCompiler relies on the Posts function returning the correct
 // results inside of ace templates.
-var Compilers = []Compiler{&PostsCompiler, &SassCompiler, &HtmlTemplatesCompiler}
+var Compilers = []Compiler{
+	&PostsCompiler,
+	&SassCompiler,
+	&HtmlTemplatesCompiler,
+	&JadeCompiler,
+}
 
 // CompilerPaths is a map of Compiler to the matched paths for that Compiler
 var CompilerPaths = map[Compiler][]string{}

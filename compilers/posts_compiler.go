@@ -1,3 +1,7 @@
+// Copyright 2015 Alex Browne.  All rights reserved.
+// Use of this source code is governed by the MIT
+// license, which can be found in the LICENSE file.
+
 package compilers
 
 import (
@@ -17,6 +21,16 @@ import (
 	"strings"
 	"time"
 )
+
+func init() {
+	// Detect whether a compiler is capable of compiling post layouts,
+	// and if so, add it to the list of post layout compilers.
+	for _, c := range Compilers {
+		if plc, ok := c.(PostLayoutCompiler); ok {
+			PostLayoutCompilers = append(PostLayoutCompilers, plc)
+		}
+	}
+}
 
 // PostsCompilerType represents a type capable of compiling post files.
 type PostsCompilerType struct {
@@ -45,9 +59,16 @@ type Post struct {
 	// the full source path
 	src string `toml:"-"`
 	// the layout tmpl file to be used for the post
-	Layout string `toml:"layout"`
-	// the html template that can be used to render the post
-	template *template.Template
+	LayoutName string `toml:"layout"`
+	// the layout template compiler (e.g. go html template or jade) that the post will be rendered into
+	LayoutCompiler PostLayoutCompiler
+}
+
+var PostLayoutCompilers []PostLayoutCompiler
+
+type PostLayoutCompiler interface {
+	RenderPost(post *Post, destPath string) error
+	PostLayoutMatchFunc() MatchFunc
 }
 
 var (
@@ -80,16 +101,20 @@ func (p *PostsCompilerType) CompileMatchFunc() MatchFunc {
 // is the same as it is for CompileMatchFunc.
 func (p *PostsCompilerType) WatchMatchFunc() MatchFunc {
 	// PostsCompiler needs to watch all posts in the posts dir,
-	// but also needs to watch all the *tmpl files in the posts
-	// layouts dir, layouts dir, and includes dir. Because if those
-	// change, it may affect the way posts are rendered.
+	// but also needs to watch all the files that post layouts compiler
+	// watches. Because if those change, it may affect the way posts are
+	// rendered.
 	postsMatch := pathMatchFunc(p.pathMatch, true, false)
-	layoutsMatch := pathMatchFunc(filepath.Join(config.LayoutsDir, "*.tmpl"), true, false)
-	postLayoutsMatch := pathMatchFunc(filepath.Join(config.PostLayoutsDir, "*.tmpl"), true, false)
+	layoutsMatch := unionMatchFuncs()
+	for _, plc := range PostLayoutCompilers {
+		c := plc.(Compiler)
+		layoutsMatch = unionMatchFuncs(layoutsMatch, c.WatchMatchFunc())
+	}
+
 	// unionMatchFuncs combines these two cases and returns a MatchFunc
 	// which will return true if either matches. This allows us to watch
 	// for changes in both the posts dir and the posts layouts dir.
-	allMatch := unionMatchFuncs(postsMatch, layoutsMatch, postLayoutsMatch)
+	allMatch := unionMatchFuncs(postsMatch, layoutsMatch)
 	if config.IncludesDir != "" {
 		// We also want to watch includes if there are any
 		includesMatch := pathMatchFunc(filepath.Join(config.IncludesDir, "*.tmpl"), true, false)
@@ -111,23 +136,15 @@ func (p *PostsCompilerType) Compile(srcPath string) error {
 	destIndexFilePath := filepath.Join(destPath, "index.html")
 	log.Success.Printf("CREATE: %s -> %s", srcPath, destIndexFilePath)
 
-	// Create the index file
-	destFile, err := util.CreateFileWithPath(destIndexFilePath)
-	if err != nil {
-		return err
-	}
-
 	// Parse content and frontmatter, then set the appropriate layout based on
 	// the layout key in the frontmatter
 	if err := post.parse(); err != nil {
 		return err
 	}
 
-	// Write to destFile by executing the template
-	postContext := context.CopyContext()
-	postContext["Post"] = post
-	if err := post.template.Execute(destFile, postContext); err != nil {
-		return fmt.Errorf("ERROR compiling html template for posts: %s", err.Error())
+	// Render the post using its layout compiler
+	if err := post.LayoutCompiler.RenderPost(post, destIndexFilePath); err != nil {
+		return err
 	}
 
 	// Add the created dir to the list of created dirs
@@ -159,26 +176,17 @@ func (p *PostsCompilerType) FileChanged(srcPath string, ev *fsnotify.FileEvent) 
 	// case, ideally we only recompile the post that was changed. We need to
 	// take into account any rename, delete, or create events and how they
 	// affect the output files in destDir.
-	switch filepath.Ext(srcPath) {
-	case ".md":
-		// TODO: Be more intelligent here? If a single post file was midified,
-		// we can simply recompile that post. We would also need to take into
-		// account the subtle differences between rename, create, and delete
-		// events. For now, recompile all posts.
-		if err := recompileAllForCompiler(p); err != nil {
-			return err
-		}
-		return nil
-	case ".tmpl":
-		// TODO: Analyze post files and be more intelligent here?
-		// When a post layout changes, only recompile the posts that
-		// use that layout. For now, recompile all posts.
-		if err := recompileAllForCompiler(p); err != nil {
-			return err
-		}
-		return nil
+
+	// TODO: Be more intelligent here? If a single post file was changed,
+	// we can simply recompile that post. If a post layout file was changed,
+	// we should recompile all posts that use that layout. We would also need
+	// to take into account the subtle differences between rename, create, and
+	// delete events. For now, recompile all posts.
+	if err := recompileAllForCompiler(p); err != nil {
+		return err
 	}
 	return nil
+
 }
 
 func (p *PostsCompilerType) RemoveOld() error {
@@ -261,32 +269,21 @@ func (p *Post) parse() error {
 	// Parse the markdown content and set p.Content
 	p.Content = template.HTML(blackfriday.MarkdownCommon([]byte(content)))
 
-	// Create a template for the post
-	if p.Layout == "" {
+	// Select the proper compiler for the post layout
+	if p.LayoutName == "" {
 		return fmt.Errorf("Could not find layout definition in toml frontmatter for post: %s", p.src)
 	}
-
-	// When we call template.ParseFiles, we want the post layout file to be first,
-	// so it is the one that will be executed.
-	postLayoutFile := filepath.Join(config.PostLayoutsDir, p.Layout)
-	otherLayoutFiles, err := filepath.Glob(filepath.Join(config.LayoutsDir, "*.tmpl"))
-	if err != nil {
-		return err
-	}
-	allFiles := append([]string{postLayoutFile}, otherLayoutFiles...)
-	// Parse the includes files if there are any
-	if config.IncludesDir != "" {
-		includeFiles, err := filepath.Glob(filepath.Join(config.IncludesDir, "*tmpl"))
-		if err != nil {
+	for _, c := range PostLayoutCompilers {
+		if match, err := c.PostLayoutMatchFunc()(p.LayoutName); err != nil {
 			return err
+		} else if match {
+			p.LayoutCompiler = c
+			break
 		}
-		allFiles = append(allFiles, includeFiles...)
 	}
-	tmpl, err := template.ParseFiles(allFiles...)
-	if err != nil {
-		return err
+	if p.LayoutCompiler == nil {
+		return fmt.Errorf("Could not find post layout compiler for layout named %s post: %s", p.LayoutName, p.src)
 	}
-	p.template = tmpl
 
 	return nil
 }
